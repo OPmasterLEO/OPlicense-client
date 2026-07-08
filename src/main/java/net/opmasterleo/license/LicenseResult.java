@@ -55,6 +55,14 @@ public final class LicenseResult {
                 return "License revoked." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
             case IP_NOT_WHITELISTED:
                 return "Server IP is not whitelisted for this license." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
+            case HWID_REQUIRED:
+                return "A hardware identifier (HWID) is required to validate this license." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
+            case MAX_HWIDS_REACHED:
+                return "This license has reached its maximum number of allowed HWIDs." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
+            case BLACKLISTED_IP:
+                return "This server's IP is blacklisted for validation." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
+            case BLACKLISTED_HWID:
+                return "This device's HWID is blacklisted for validation." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
             case PRODUCT_MISMATCH:
                 return "License is not valid for this product.";
             case PRODUCT_ARCHIVED:

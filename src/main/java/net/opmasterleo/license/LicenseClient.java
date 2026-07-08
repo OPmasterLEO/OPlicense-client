@@ -176,6 +176,14 @@ public final class LicenseClient {
                 return LicenseOutcome.EXPIRED;
             case "IP_NOT_WHITELISTED":
                 return LicenseOutcome.IP_NOT_WHITELISTED;
+            case "HWID_REQUIRED":
+                return LicenseOutcome.HWID_REQUIRED;
+            case "MAX_HWIDS_REACHED":
+                return LicenseOutcome.MAX_HWIDS_REACHED;
+            case "BLACKLISTED_IP":
+                return LicenseOutcome.BLACKLISTED_IP;
+            case "BLACKLISTED_HWID":
+                return LicenseOutcome.BLACKLISTED_HWID;
             case "TIMESTAMP_DESYNC":
                 return LicenseOutcome.TIMESTAMP_DESYNC;
             case "RATE_LIMITED":

@@ -11,6 +11,10 @@ public final class ValidationRequest {
     private Consumer<LicenseResult> onExpired;
     private Consumer<LicenseResult> onRevoked;
     private Consumer<LicenseResult> onIpNotWhitelisted;
+    private Consumer<LicenseResult> onHwidRequired;
+    private Consumer<LicenseResult> onMaxHwidExceeded;
+    private Consumer<LicenseResult> onBlacklistedIp;
+    private Consumer<LicenseResult> onBlacklistedHwid;
     private Consumer<LicenseResult> onProductMismatch;
     private Consumer<LicenseResult> onProductArchived;
     private Consumer<LicenseResult> onLicenseNotFound;
@@ -45,6 +49,26 @@ public final class ValidationRequest {
 
     public ValidationRequest onIpNotWhitelisted(Consumer<LicenseResult> callback) {
         this.onIpNotWhitelisted = callback;
+        return this;
+    }
+
+    public ValidationRequest onHwidRequired(Consumer<LicenseResult> callback) {
+        this.onHwidRequired = callback;
+        return this;
+    }
+
+    public ValidationRequest onMaxHwidExceeded(Consumer<LicenseResult> callback) {
+        this.onMaxHwidExceeded = callback;
+        return this;
+    }
+
+    public ValidationRequest onBlacklistedIp(Consumer<LicenseResult> callback) {
+        this.onBlacklistedIp = callback;
+        return this;
+    }
+
+    public ValidationRequest onBlacklistedHwid(Consumer<LicenseResult> callback) {
+        this.onBlacklistedHwid = callback;
         return this;
     }
 
@@ -102,6 +126,18 @@ public final class ValidationRequest {
                 break;
             case IP_NOT_WHITELISTED:
                 if (onIpNotWhitelisted != null) onIpNotWhitelisted.accept(result);
+                break;
+            case HWID_REQUIRED:
+                if (onHwidRequired != null) onHwidRequired.accept(result);
+                break;
+            case MAX_HWIDS_REACHED:
+                if (onMaxHwidExceeded != null) onMaxHwidExceeded.accept(result);
+                break;
+            case BLACKLISTED_IP:
+                if (onBlacklistedIp != null) onBlacklistedIp.accept(result);
+                break;
+            case BLACKLISTED_HWID:
+                if (onBlacklistedHwid != null) onBlacklistedHwid.accept(result);
                 break;
             case PRODUCT_MISMATCH:
                 if (onProductMismatch != null) onProductMismatch.accept(result);

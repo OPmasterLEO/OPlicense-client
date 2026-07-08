@@ -38,6 +38,22 @@ public class ExamplePlugin extends JavaPlugin {
                     getLogger().severe(result.summary());
                     Bukkit.getPluginManager().disablePlugin(this);
                 })
+                .onHwidRequired(result -> {
+                    getLogger().severe(result.summary());
+                    Bukkit.getPluginManager().disablePlugin(this);
+                })
+                .onMaxHwidExceeded(result -> {
+                    getLogger().severe(result.summary());
+                    Bukkit.getPluginManager().disablePlugin(this);
+                })
+                .onBlacklistedIp(result -> {
+                    getLogger().severe(result.summary());
+                    Bukkit.getPluginManager().disablePlugin(this);
+                })
+                .onBlacklistedHwid(result -> {
+                    getLogger().severe(result.summary());
+                    Bukkit.getPluginManager().disablePlugin(this);
+                })
                 .onProductMismatch(result -> {
                     getLogger().severe(result.summary());
                     Bukkit.getPluginManager().disablePlugin(this);
