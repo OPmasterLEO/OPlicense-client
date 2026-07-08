@@ -147,22 +147,23 @@ public final class LicenseClient {
             );
         }
 
-        String responseBody = response.body();
-        int statusCode = response.statusCode();
+        final HttpResponse<String> finalResponse = response;
+        String responseBody = finalResponse.body();
+        int statusCode = finalResponse.statusCode();
 
         if (statusCode >= 500) {
             return new LicenseResult(LicenseOutcome.NETWORK_ERROR, product, null, null, responseBody, null);
         }
 
-        String signature = response.headers().firstValue("x-signature")
-                .or(() -> response.headers().firstValue("X-Signature"))
+        String signature = finalResponse.headers().firstValue("x-signature")
+                .or(() -> finalResponse.headers().firstValue("X-Signature"))
                 .orElse(null);
         if (signature != null) {
             signature = signature.trim();
         }
 
-        String algorithm = response.headers().firstValue("x-signature-alg")
-                .or(() -> response.headers().firstValue("X-Signature-Alg"))
+        String algorithm = finalResponse.headers().firstValue("x-signature-alg")
+                .or(() -> finalResponse.headers().firstValue("X-Signature-Alg"))
                 .orElse(null);
 
         if (!verifier.verify(responseBody, signature, algorithm)) {
