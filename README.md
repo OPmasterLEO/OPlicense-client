@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.opmasterleo:OPlicense-client:1.0.0")
+    implementation("com.github.opmasterleo:OPlicense-client:1.0.1")
 }
 ```
 
@@ -33,7 +33,7 @@ Maven:
 <dependency>
     <groupId>com.github.opmasterleo</groupId>
     <artifactId>OPlicense-client</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 
@@ -88,19 +88,21 @@ last-known-good result.
 
 ## Full outcome list
 
-| Callback | Fires when |
-|---|---|
-| `onValid()` | License is good |
-| `onExpired(result)` | Past its expiry date |
-| `onRevoked(result)` | Explicitly revoked by an admin |
-| `onIpNotWhitelisted(result)` | This server's IP isn't on the license's whitelist |
-| `onProductMismatch(result)` | Key doesn't belong to this product |
-| `onProductArchived(result)` | Product has been discontinued |
-| `onLicenseNotFound(result)` | Key doesn't exist |
-| `onTimestampDesync(result)` | Server clock drift outside the allowed window |
-| `onRateLimited(result)` | Too many recent validate attempts for this key/IP |
+
+| Callback                     | Fires when                                                                     |
+| ---------------------------- | ------------------------------------------------------------------------------ |
+| `onValid()`                  | License is good                                                                |
+| `onExpired(result)`          | Past its expiry date                                                           |
+| `onRevoked(result)`          | Explicitly revoked by an admin                                                 |
+| `onIpNotWhitelisted(result)` | This server's IP isn't on the license's whitelist                              |
+| `onProductMismatch(result)`  | Key doesn't belong to this product                                             |
+| `onProductArchived(result)`  | Product has been discontinued                                                  |
+| `onLicenseNotFound(result)`  | Key doesn't exist                                                              |
+| `onTimestampDesync(result)`  | Server clock drift outside the allowed window                                  |
+| `onRateLimited(result)`      | Too many recent validate attempts for this key/IP                              |
 | `onSignatureInvalid(result)` | Response didn't verify against the secret — treat as a possible spoofed server |
-| `onNetworkError(exception)` | Couldn't reach the backend at all |
+| `onNetworkError(exception)`  | Couldn't reach the backend at all                                              |
+
 
 Any callback you don't set is simply skipped — nothing runs. There's no
 forced console output or banner; build whatever presentation fits your
