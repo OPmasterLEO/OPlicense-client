@@ -17,30 +17,52 @@ public interface ResponseVerifier {
         if (secret == null || secret.isEmpty()) {
             throw new LicenseException("HMAC secret is required");
         }
-        return (payload, signature, algorithmHeader) -> {
+        return new HmacResponseVerifier(secret);
+    }
+
+    static ResponseVerifier ed25519(String spkiBase64) {
+        PublicKey publicKey = Ed25519.decodePublicKey(spkiBase64);
+        return new Ed25519ResponseVerifier(publicKey);
+    }
+
+    static String normalizeAlgorithm(String algorithmHeader) {
+        if (algorithmHeader == null || algorithmHeader.isBlank()) {
+            return "hmac";
+        }
+        return algorithmHeader.trim().toLowerCase();
+    }
+
+    final class HmacResponseVerifier implements ResponseVerifier {
+        private final String secret;
+
+        HmacResponseVerifier(String secret) {
+            this.secret = secret;
+        }
+
+        @Override
+        public boolean verify(String payload, String signature, String algorithmHeader) {
             String algorithm = normalizeAlgorithm(algorithmHeader);
             if (!"hmac".equals(algorithm)) {
                 return false;
             }
             return Hmac.verify(payload, secret, signature);
-        };
+        }
     }
 
-    static ResponseVerifier ed25519(String spkiBase64) {
-        PublicKey publicKey = Ed25519.decodePublicKey(spkiBase64);
-        return (payload, signature, algorithmHeader) -> {
+    final class Ed25519ResponseVerifier implements ResponseVerifier {
+        private final PublicKey publicKey;
+
+        Ed25519ResponseVerifier(PublicKey publicKey) {
+            this.publicKey = publicKey;
+        }
+
+        @Override
+        public boolean verify(String payload, String signature, String algorithmHeader) {
             String algorithm = normalizeAlgorithm(algorithmHeader);
             if (!"ed25519".equals(algorithm)) {
                 return false;
             }
             return Ed25519.verify(payload, signature, publicKey);
-        };
-    }
-
-    private static String normalizeAlgorithm(String algorithmHeader) {
-        if (algorithmHeader == null || algorithmHeader.isBlank()) {
-            return "hmac";
         }
-        return algorithmHeader.trim().toLowerCase();
     }
 }

@@ -108,6 +108,16 @@ LicenseClient.withEd25519(
 patch `verify()` to always return true. Ed25519 + obfuscation stops casual piracy
 and fake license servers; it does not stop dedicated crackers.
 
+## Obfuscation Compatibility
+
+`OPlicense-client` is designed to survive heavy plugin obfuscation, including
+ProGuard/R8 and Skidfuscator. Verifier internals now use explicit concrete
+classes (not synthetic lambda implementations) to reduce runtime linkage issues
+like `AbstractMethodError` / `NoSuchMethodError` at verifier call sites.
+
+For consumer keep rules, see [`PROGUARD.md`](./PROGUARD.md). Keep exemptions
+minimal and focused on signature-critical classes only.
+
 ## Basic usage
 
 ```java
@@ -166,14 +176,15 @@ They're sent along with every request purely for your own visibility —
 the backend logs them to your Discord log channel — and are never used
 to gate access on their own.
 
-## Advanced: why the secret matters
+## Advanced: why signed responses matter
 
-Every response from the backend is HMAC-signed with that product's own
-secret. `LicenseClient` recomputes the signature on every response and
-rejects anything that doesn't match — via `onSignatureInvalid` — even if
-the response body itself says `valid: true`. This is what stops someone
-from pointing your plugin at a fake server that always claims success:
-without the real secret, a forged server can't produce a signature that
-verifies.
+Every response from the backend is signed, and `LicenseClient` verifies it
+before trusting the payload. A forged host cannot produce a valid signature
+without the signing key.
+
+Ed25519 mode is strongly recommended because plugins embed only a **public key**.
+Even if the jar is decompiled, attackers cannot mint valid signatures.
+HMAC mode remains for compatibility but is weaker because the shared secret ships
+inside the plugin.
 
 See `examples/ExamplePlugin.java` for a complete, wired-up example.
