@@ -6,14 +6,34 @@ public final class LicenseResult {
     private final String product;
     private final String status;
     private final String expiresAt;
+    private final String ownerDiscordId;
+    private final String serverId;
+    private final String[] whitelistedIps;
     private final String rawBody;
     private final Exception networkError;
 
     LicenseResult(LicenseOutcome outcome, String product, String status, String expiresAt, String rawBody, Exception networkError) {
+        this(outcome, product, status, expiresAt, null, null, null, rawBody, networkError);
+    }
+
+    LicenseResult(
+            LicenseOutcome outcome,
+            String product,
+            String status,
+            String expiresAt,
+            String ownerDiscordId,
+            String serverId,
+            String[] whitelistedIps,
+            String rawBody,
+            Exception networkError
+    ) {
         this.outcome = outcome;
         this.product = product;
         this.status = status;
         this.expiresAt = expiresAt;
+        this.ownerDiscordId = ownerDiscordId;
+        this.serverId = serverId;
+        this.whitelistedIps = whitelistedIps == null ? new String[0] : whitelistedIps.clone();
         this.rawBody = rawBody;
         this.networkError = networkError;
     }
@@ -32,6 +52,18 @@ public final class LicenseResult {
 
     public String expiresAt() {
         return expiresAt;
+    }
+
+    public String ownerDiscordId() {
+        return ownerDiscordId;
+    }
+
+    public String serverId() {
+        return serverId;
+    }
+
+    public String[] whitelistedIps() {
+        return whitelistedIps.clone();
     }
 
     public String rawBody() {

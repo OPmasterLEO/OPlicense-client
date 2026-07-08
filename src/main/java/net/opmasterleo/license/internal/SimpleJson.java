@@ -46,6 +46,22 @@ public final class SimpleJson {
         return result;
     }
 
+    public static String[] parseStringArray(String json, String key) {
+        Pattern fieldPattern = Pattern.compile("\"" + Pattern.quote(key) + "\"\\s*:\\s*\\[(.*?)\\]");
+        Matcher fieldMatcher = fieldPattern.matcher(json);
+        if (!fieldMatcher.find()) return new String[0];
+
+        String inner = fieldMatcher.group(1).trim();
+        if (inner.isEmpty()) return new String[0];
+
+        Matcher valueMatcher = Pattern.compile("\"((?:\\\\.|[^\"\\\\])*)\"").matcher(inner);
+        java.util.ArrayList<String> values = new java.util.ArrayList<>();
+        while (valueMatcher.find()) {
+            values.add(valueMatcher.group(1).replace("\\\"", "\"").replace("\\\\", "\\"));
+        }
+        return values.toArray(new String[0]);
+    }
+
     private static String escape(String value) {
         return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }

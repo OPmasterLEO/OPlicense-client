@@ -205,13 +205,36 @@ public final class LicenseClient {
         boolean valid = "true".equals(parsed.get("valid"));
         String status = parsed.get("status");
         String expiresAt = parsed.get("expiresAt");
+        String ownerDiscordId = parsed.get("ownerDiscordId");
+        String serverId = parsed.get("serverId");
+        String[] whitelistedIps = SimpleJson.parseStringArray(responseBody, "whitelistedIps");
 
         if (valid) {
-            return new LicenseResult(LicenseOutcome.VALID, product, status, expiresAt, responseBody, null);
+            return new LicenseResult(
+                    LicenseOutcome.VALID,
+                    product,
+                    status,
+                    expiresAt,
+                    ownerDiscordId,
+                    serverId,
+                    whitelistedIps,
+                    responseBody,
+                    null
+            );
         }
 
         LicenseOutcome outcome = mapReason(parsed.get("reason"));
-        return new LicenseResult(outcome, product, status, expiresAt, responseBody, null);
+        return new LicenseResult(
+                outcome,
+                product,
+                status,
+                expiresAt,
+                ownerDiscordId,
+                serverId,
+                whitelistedIps,
+                responseBody,
+                null
+        );
     }
 
     private static LicenseOutcome mapReason(String reason) {

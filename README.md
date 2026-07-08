@@ -159,7 +159,8 @@ last-known-good result.
 Any callback you don't set is simply skipped — nothing runs. There's no
 forced console output or banner; build whatever presentation fits your
 plugin's own style using the `LicenseResult` data (`result.status()`,
-`result.expiresAt()`, `result.rawBody()`).
+`result.expiresAt()`, `result.ownerDiscordId()`, `result.serverId()`,
+`result.whitelistedIps()`, `result.rawBody()`).
 
 ## Optional environment fields
 
