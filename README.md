@@ -50,13 +50,13 @@ directly in your plugin's own private source, right where you construct
 `config.yml`, since that's meant to differ per install:
 
 ```yaml
-license: "XXXX-XXXX-XXXX-XXXX"
+license-key: "XXXX-XXXX-XXXX-XXXX"
 ```
 
 ```java
 LicenseClient client = new LicenseClient(
     "http://your-vps-ip:3000",   // hardcoded, not from config
-    getConfig().getString("license"),
+    getConfig().getString("license-key"),
     "your-product-slug",
     "your-products-hmac-secret"   // hardcoded, from /product-create on the backend
 );

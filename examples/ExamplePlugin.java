@@ -9,7 +9,7 @@ public class ExamplePlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
-        String key = getConfig().getString("license");
+        String key = getConfig().getString("license-key");
 
         LicenseClient client = new LicenseClient(
                 "http://YOUR-VPS-IP:3000",
