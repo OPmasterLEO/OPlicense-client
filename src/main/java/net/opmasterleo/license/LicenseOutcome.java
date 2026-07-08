@@ -1,0 +1,15 @@
+package net.opmasterleo.license;
+
+public enum LicenseOutcome {
+    VALID,
+    EXPIRED,
+    REVOKED,
+    IP_NOT_WHITELISTED,
+    PRODUCT_MISMATCH,
+    PRODUCT_ARCHIVED,
+    LICENSE_NOT_FOUND,
+    TIMESTAMP_DESYNC,
+    RATE_LIMITED,
+    SIGNATURE_INVALID,
+    NETWORK_ERROR
+}
