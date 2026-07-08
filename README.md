@@ -1,8 +1,8 @@
 # OPlicense-client
 
-[![](https://jitci.com/gh/OPmasterLEO/OPlicense-client/svg)](https://jitci.com/gh/OPmasterLEO/OPlicense-client)
 
-[![](https://jitpack.io/v/OPmasterLEO/OPlicense-client.svg)](https://jitpack.io/#OPmasterLEO/OPlicense-client)
+
+
 
 Java client SDK for validating licenses against a self-hosted
 [oplicense-backend](../oplicense-backend) instance. No external
@@ -20,7 +20,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.opmasterleo:OPlicense-client:1.0.1")
+    implementation("com.github.opmasterleo:OPlicense-client:1.0.2")
 }
 ```
 
@@ -37,7 +37,7 @@ Maven:
 <dependency>
     <groupId>com.github.opmasterleo</groupId>
     <artifactId>OPlicense-client</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 </dependency>
 ```
 
@@ -67,6 +67,8 @@ LicenseClient client = LicenseClient.withEd25519(
 );
 ```
 
+
+
 ### Legacy: HMAC (symmetric secret — extractable)
 
 HMAC mode still works but is weaker: anyone who extracts the secret from your
@@ -81,16 +83,18 @@ LicenseClient client = new LicenseClient(
 );
 ```
 
+
+
 ## Hiding strings from casual decompilation
 
 ProGuard and similar tools **rename classes** but usually leave string literals
 readable (`LICENSE_HMAC = "673a..."` stays visible). To raise the bar:
 
 1. Switch to **Ed25519** so extracted material is not a forging key.
-2. Use **`Concealed.decode(int[], seed)`** instead of `static final String`.
+2. Use `Concealed.decode(int[], seed)` instead of `static final String`.
 3. Run `examples/ConcealSecrets.java` at build time to generate the `int[]` arrays.
 4. For stronger protection, use a commercial obfuscator with **string encryption**
-   (Zelix, Stringer, Allatori) or a small **native (JNI)** verifier.
+  (Zelix, Stringer, Allatori) or a small **native (JNI)** verifier.
 5. Use **HTTPS** — plain `http://` lets anyone on the network MITM your API.
 
 ```java
