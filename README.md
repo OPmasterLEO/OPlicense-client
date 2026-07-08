@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.opmasterleo:OPlicense-client:1.0.5")
+    implementation("com.github.opmasterleo:OPlicense-client:1.0.6")
 }
 ```
 
@@ -33,7 +33,7 @@ Maven:
 <dependency>
     <groupId>com.github.opmasterleo</groupId>
     <artifactId>OPlicense-client</artifactId>
-    <version>1.0.5</version>
+    <version>1.0.6</version>
 </dependency>
 ```
 
@@ -115,7 +115,7 @@ ProGuard/R8 and Skidfuscator. Verifier internals now use explicit concrete
 classes (not synthetic lambda implementations) to reduce runtime linkage issues
 like `AbstractMethodError` / `NoSuchMethodError` at verifier call sites.
 
-For consumer keep rules, see [`PROGUARD.md`](./PROGUARD.md). Keep exemptions
+For consumer keep rules, see `[PROGUARD.md](./PROGUARD.md)`. Keep exemptions
 minimal and focused on signature-critical classes only.
 
 ## Basic usage
@@ -175,6 +175,26 @@ client.setProductVersion(getDescription().getVersion())
 They're sent along with every request purely for your own visibility —
 the backend logs them to your Discord log channel — and are never used
 to gate access on their own.
+
+### Stable server ID (HWID) for Pterodactyl/containers
+
+The SDK now derives a more stable default HWID for containerized hosts:
+
+1. explicit overrides (`-Doplicense.hwid=...` or `OPLICENSE_HWID`)
+2. Pterodactyl/container env identifiers (`P_SERVER_UUID`, etc.)
+3. machine-id files (`/etc/machine-id`)
+4. MAC/legacy fallback
+
+All candidates are hashed before use (sent as `HWID-...`), so raw panel IDs
+are not sent directly.
+
+If you want full control, still call:
+
+```java
+client.setHwid("your-stable-server-id");
+```
+
+
 
 ## Advanced: why signed responses matter
 

@@ -1,5 +1,6 @@
 package net.opmasterleo.license;
 
+import net.opmasterleo.license.internal.HwidResolver;
 import net.opmasterleo.license.internal.SimpleJson;
 
 import java.io.IOException;
@@ -62,6 +63,12 @@ public final class LicenseClient {
 
     public LicenseClient setHwid(String hwid) {
         this.hwid = hwid;
+        return this;
+    }
+
+    /** Recomputes and applies the SDK's stable HWID strategy. */
+    public LicenseClient useAutoHwid() {
+        this.hwid = defaultHwid();
         return this;
     }
 
@@ -261,18 +268,7 @@ public final class LicenseClient {
     }
 
     private static String defaultHwid() {
-        try {
-            java.net.NetworkInterface ni = java.net.NetworkInterface.getByInetAddress(java.net.InetAddress.getLocalHost());
-            if (ni != null && ni.getHardwareAddress() != null) {
-                StringBuilder sb = new StringBuilder();
-                for (byte b : ni.getHardwareAddress()) {
-                    sb.append(String.format("%02X", b));
-                }
-                return sb.toString();
-            }
-        } catch (Exception ignored) {
-        }
-        return System.getProperty("user.name", "unknown") + "-" + System.getProperty("os.name", "unknown");
+        return HwidResolver.resolveStable();
     }
 
     private static String encodePathSegment(String value) {
