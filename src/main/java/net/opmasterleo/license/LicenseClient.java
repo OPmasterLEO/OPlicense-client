@@ -5,10 +5,12 @@ import net.opmasterleo.license.internal.SimpleJson;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -87,22 +89,59 @@ public final class LicenseClient {
         fields.put("container", container);
 
         String requestBody = SimpleJson.object(fields);
-        String url = apiUrl + "/v1/license/" + product + "/" + licenseKey;
+        String url = apiUrl + "/v1/license/" + encodePathSegment(product) + "/" + encodePathSegment(licenseKey);
 
-        HttpResponse<String> response;
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .header("Content-Type", "application/json")
-                    .timeout(Duration.ofSeconds(15))
-                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                    .build();
-            response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (IOException | InterruptedException e) {
-            return new LicenseResult(LicenseOutcome.NETWORK_ERROR, product, null, null, null, e);
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .timeout(Duration.ofSeconds(15))
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+        HttpResponse<String> response = null;
+        int maxAttempts = 3;
+        long backoffBaseMs = 500;
+
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                break;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return new LicenseResult(LicenseOutcome.NETWORK_ERROR, product, null, null, null, e);
+            } catch (IOException e) {
+                if (attempt >= maxAttempts) {
+                    return new LicenseResult(LicenseOutcome.NETWORK_ERROR, product, null, null, null, e);
+                }
+                try {
+                    long sleepMs = backoffBaseMs * attempt;
+                    Thread.sleep(sleepMs);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return new LicenseResult(LicenseOutcome.NETWORK_ERROR, product, null, null, null, ie);
+                }
+            }
+        }
+
+        if (response == null) {
+            return new LicenseResult(
+                    LicenseOutcome.NETWORK_ERROR,
+                    product,
+                    null,
+                    null,
+                    null,
+                    new IOException("No response received")
+            );
         }
 
         String responseBody = response.body();
+        int statusCode = response.statusCode();
+
+        // If the backend is unhealthy, don't produce misleading signature/parsing failures.
+        if (statusCode >= 500) {
+            return new LicenseResult(LicenseOutcome.NETWORK_ERROR, product, null, null, responseBody, null);
+        }
+
         String signature = response.headers().firstValue("X-Signature").orElse(null);
 
         if (!Hmac.verify(responseBody, hmacSecret, signature)) {
@@ -159,5 +198,11 @@ public final class LicenseClient {
         } catch (Exception ignored) {
         }
         return System.getProperty("user.name", "unknown") + "-" + System.getProperty("os.name", "unknown");
+    }
+
+    private static String encodePathSegment(String value) {
+        // Ensure path segments are safe even if they contain special characters.
+        // URLEncoder uses '+' for spaces, which is not appropriate for URL path segments.
+        return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
     }
 }

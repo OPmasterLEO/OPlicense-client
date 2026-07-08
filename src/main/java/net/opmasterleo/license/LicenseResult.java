@@ -41,4 +41,44 @@ public final class LicenseResult {
     public Exception networkError() {
         return networkError;
     }
+
+    public String summary() {
+        String statusPart = status == null ? "" : " Status: " + status + ".";
+        String expiresPart = formatExpiresAt();
+
+        switch (outcome) {
+            case VALID:
+                return "License valid." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
+            case EXPIRED:
+                return "License expired." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
+            case REVOKED:
+                return "License revoked." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
+            case IP_NOT_WHITELISTED:
+                return "Server IP is not whitelisted for this license." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
+            case PRODUCT_MISMATCH:
+                return "License is not valid for this product.";
+            case PRODUCT_ARCHIVED:
+                return "This product is no longer supported.";
+            case LICENSE_NOT_FOUND:
+                return "License key not recognized.";
+            case TIMESTAMP_DESYNC:
+                return "Request timestamp is out of sync with the server.";
+            case RATE_LIMITED:
+                return "Too many validation attempts; please try again shortly.";
+            case SIGNATURE_INVALID:
+                return "License response could not be verified (signature mismatch).";
+            case NETWORK_ERROR:
+                return "Could not reach the license server.";
+            default:
+                return "License outcome: " + outcome;
+        }
+    }
+
+    private String formatExpiresAt() {
+        if (expiresAt == null || "null".equalsIgnoreCase(expiresAt)) {
+            if (outcome == LicenseOutcome.VALID || "ACTIVE".equals(status)) return " Expires: Lifetime.";
+            return "";
+        }
+        return " Expires: " + expiresAt + ".";
+    }
 }

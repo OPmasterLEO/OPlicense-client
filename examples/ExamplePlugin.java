@@ -22,45 +22,48 @@ public class ExamplePlugin extends JavaPlugin {
                 .setServerSoftware(Bukkit.getName(), Bukkit.getVersion());
 
         client.validate()
-                .onValid(this::loadPlugin)
+                .onValid(result -> {
+                    getLogger().info(result.summary());
+                    loadPlugin();
+                })
                 .onExpired(result -> {
-                    getLogger().severe("License expired.");
+                    getLogger().severe(result.summary());
                     Bukkit.getPluginManager().disablePlugin(this);
                 })
                 .onRevoked(result -> {
-                    getLogger().severe("License revoked.");
+                    getLogger().severe(result.summary());
                     Bukkit.getPluginManager().disablePlugin(this);
                 })
                 .onIpNotWhitelisted(result -> {
-                    getLogger().severe("This server's IP is not whitelisted for this license.");
+                    getLogger().severe(result.summary());
                     Bukkit.getPluginManager().disablePlugin(this);
                 })
                 .onProductMismatch(result -> {
-                    getLogger().severe("License is not valid for this product.");
+                    getLogger().severe(result.summary());
                     Bukkit.getPluginManager().disablePlugin(this);
                 })
                 .onProductArchived(result -> {
-                    getLogger().severe("This product is no longer supported.");
+                    getLogger().severe(result.summary());
                     Bukkit.getPluginManager().disablePlugin(this);
                 })
                 .onLicenseNotFound(result -> {
-                    getLogger().severe("License key not recognized.");
+                    getLogger().severe(result.summary());
                     Bukkit.getPluginManager().disablePlugin(this);
                 })
                 .onTimestampDesync(result -> {
-                    getLogger().severe("Server clock is out of sync, cannot validate license.");
+                    getLogger().severe(result.summary());
                     Bukkit.getPluginManager().disablePlugin(this);
                 })
                 .onRateLimited(result -> {
-                    getLogger().severe("Too many validation attempts, try again later.");
+                    getLogger().severe(result.summary());
                     Bukkit.getPluginManager().disablePlugin(this);
                 })
                 .onSignatureInvalid(result -> {
-                    getLogger().severe("License response could not be verified.");
+                    getLogger().severe(result.summary());
                     Bukkit.getPluginManager().disablePlugin(this);
                 })
                 .onNetworkError(exception -> {
-                    getLogger().severe("Could not reach the license server: " + exception.getMessage());
+                    getLogger().severe("Network error validating license: " + exception.getMessage());
                     Bukkit.getPluginManager().disablePlugin(this);
                 })
                 .run();

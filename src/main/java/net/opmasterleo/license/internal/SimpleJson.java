@@ -29,10 +29,15 @@ public final class SimpleJson {
         return sb.toString();
     }
 
+    // Regex-based JSON parsing is inherently limited; this pattern is tuned for the
+    // flat, string/boolean/null/number responses produced by this project.
+    private static final Pattern FLAT_PATTERN = Pattern.compile(
+            "\"(\\w+)\"\\s*:\\s*(\"((?:\\\\.|[^\"\\\\])*)\"|true|false|null|[-0-9.]+)"
+    );
+
     public static Map<String, String> parseFlat(String json) {
         Map<String, String> result = new LinkedHashMap<>();
-        Pattern pattern = Pattern.compile("\"(\\w+)\"\\s*:\\s*(\"([^\"]*)\"|true|false|null|[-0-9.]+)");
-        Matcher matcher = pattern.matcher(json);
+        Matcher matcher = FLAT_PATTERN.matcher(json);
         while (matcher.find()) {
             String key = matcher.group(1);
             String value = matcher.group(3) != null ? matcher.group(3) : matcher.group(2);

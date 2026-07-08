@@ -7,6 +7,7 @@ public final class ValidationRequest {
     private final LicenseClient client;
 
     private Runnable onValid;
+    private Consumer<LicenseResult> onValidWithResult;
     private Consumer<LicenseResult> onExpired;
     private Consumer<LicenseResult> onRevoked;
     private Consumer<LicenseResult> onIpNotWhitelisted;
@@ -24,6 +25,11 @@ public final class ValidationRequest {
 
     public ValidationRequest onValid(Runnable callback) {
         this.onValid = callback;
+        return this;
+    }
+
+    public ValidationRequest onValid(Consumer<LicenseResult> callback) {
+        this.onValidWithResult = callback;
         return this;
     }
 
@@ -85,7 +91,8 @@ public final class ValidationRequest {
     private void dispatch(LicenseResult result) {
         switch (result.outcome()) {
             case VALID:
-                if (onValid != null) onValid.run();
+                if (onValidWithResult != null) onValidWithResult.accept(result);
+                else if (onValid != null) onValid.run();
                 break;
             case EXPIRED:
                 if (onExpired != null) onExpired.accept(result);
