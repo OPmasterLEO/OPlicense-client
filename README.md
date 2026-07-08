@@ -47,33 +47,66 @@ coordinates above.
 
 ## What must never go in a user-editable config file
 
-The API URL and the HMAC secret are **not** meant to be configurable by
-whoever runs the server the plugin is installed on. Both belong hardcoded
-directly in your plugin's own private source, right where you construct
-`LicenseClient`. Only the license key itself belongs in something like
-`config.yml`, since that's meant to differ per install.
+The API URL and signing material are **not** meant to be configurable by
+whoever runs the server. Both belong in your plugin's private source (ideally
+concealed — see below). Only the license key itself belongs in `config.yml`.
 
-The **HMAC secret** (4th constructor argument) is **not** `GLOBAL_HMAC_SECRET`
-from your backend `.env` by default. Each product has its own secret — get it
-from `/product info` in Discord (sent via DM), or set `HMAC_SIGNING_MODE=global`
-on the backend and then use `GLOBAL_HMAC_SECRET` everywhere.
+### Recommended: Ed25519 (public key only)
 
-```yaml
-license-key: "XXXX-XXXX-XXXX-XXXX"
-```
+With `RESPONSE_SIGNING_MODE=ed25519` on the backend, the plugin embeds a
+**public key** from `/product info`. Even if someone decompiles your JAR they
+**cannot forge** valid license responses — unlike HMAC, where the extracted
+secret lets them run a fake license server.
 
 ```java
-LicenseClient client = new LicenseClient(
-    "http://your-vps-ip:3000",   // hardcoded, not from config
+LicenseClient client = LicenseClient.withEd25519(
+    "https://your-api.example",          // use HTTPS in production
     getConfig().getString("license-key"),
     "your-product-slug",
-    "your-products-hmac-secret"   // from /product info (NOT GLOBAL_HMAC_SECRET unless HMAC_SIGNING_MODE=global)
+    "MCowBQYDK2VwAyEA..."                // SPKI base64 from /product info DM
 );
 ```
 
-If any of the four constructor arguments are missing, the SDK throws
-immediately rather than silently skipping verification — there's no way
-to accidentally ship a plugin with signature checking turned off.
+### Legacy: HMAC (symmetric secret — extractable)
+
+HMAC mode still works but is weaker: anyone who extracts the secret from your
+JAR can sign fake `valid: true` responses. Prefer Ed25519 for new products.
+
+```java
+LicenseClient client = new LicenseClient(
+    "https://your-api.example",
+    getConfig().getString("license-key"),
+    "your-product-slug",
+    "your-products-hmac-secret"
+);
+```
+
+## Hiding strings from casual decompilation
+
+ProGuard and similar tools **rename classes** but usually leave string literals
+readable (`LICENSE_HMAC = "673a..."` stays visible). To raise the bar:
+
+1. Switch to **Ed25519** so extracted material is not a forging key.
+2. Use **`Concealed.decode(int[], seed)`** instead of `static final String`.
+3. Run `examples/ConcealSecrets.java` at build time to generate the `int[]` arrays.
+4. For stronger protection, use a commercial obfuscator with **string encryption**
+   (Zelix, Stringer, Allatori) or a small **native (JNI)** verifier.
+5. Use **HTTPS** — plain `http://` lets anyone on the network MITM your API.
+
+```java
+private static final int SEED = 0x1A2B3C4D;
+
+LicenseClient.withEd25519(
+    Concealed.decode(new int[] { /* ... */ }, SEED),
+    getConfig().getString("license-key"),
+    Concealed.decode(new int[] { /* ... */ }, SEED),
+    Concealed.decode(new int[] { /* ... */ }, SEED)
+);
+```
+
+**Reality check:** no client-side check is unbreakable. A determined attacker can
+patch `verify()` to always return true. Ed25519 + obfuscation stops casual piracy
+and fake license servers; it does not stop dedicated crackers.
 
 ## Basic usage
 

@@ -79,8 +79,8 @@ public final class LicenseResult {
                 return "Too many validation attempts; please try again shortly.";
             case SIGNATURE_INVALID:
                 return "License response could not be verified (signature mismatch). "
-                        + "Use the product HMAC secret from /product info in Discord — not GLOBAL_HMAC_SECRET "
-                        + "unless your backend has HMAC_SIGNING_MODE=global.";
+                        + "If using HMAC mode, confirm the product secret from /product info. "
+                        + "If using Ed25519 mode, embed only the public key from /product info.";
             case NETWORK_ERROR:
                 return "Could not reach the license server.";
             default:

@@ -1,6 +1,5 @@
 package net.opmasterleo.license;
 
-import net.opmasterleo.license.internal.Hmac;
 import net.opmasterleo.license.internal.SimpleJson;
 
 import java.io.IOException;
@@ -19,7 +18,7 @@ public final class LicenseClient {
     private final String apiUrl;
     private final String licenseKey;
     private final String product;
-    private final String hmacSecret;
+    private final ResponseVerifier verifier;
     private final HttpClient httpClient;
 
     private String hwid = defaultHwid();
@@ -33,15 +32,29 @@ public final class LicenseClient {
     private String serverSoftwareVersion;
     private String container;
 
+    /** Legacy HMAC mode — prefer {@link #withEd25519(String, String, String, String)}. */
     public LicenseClient(String apiUrl, String licenseKey, String product, String hmacSecret) {
-        if (apiUrl == null || licenseKey == null || product == null || hmacSecret == null) {
-            throw new LicenseException("apiUrl, licenseKey, product, and hmacSecret are all required");
+        this(apiUrl, licenseKey, product, ResponseVerifier.hmac(hmacSecret));
+    }
+
+    public LicenseClient(String apiUrl, String licenseKey, String product, ResponseVerifier verifier) {
+        if (apiUrl == null || licenseKey == null || product == null || verifier == null) {
+            throw new LicenseException("apiUrl, licenseKey, product, and verifier are all required");
         }
         this.apiUrl = apiUrl;
         this.licenseKey = licenseKey;
         this.product = product;
-        this.hmacSecret = hmacSecret;
+        this.verifier = verifier;
         this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+    }
+
+    public static LicenseClient withEd25519(
+            String apiUrl,
+            String licenseKey,
+            String product,
+            String ed25519PublicKeySpkiBase64
+    ) {
+        return new LicenseClient(apiUrl, licenseKey, product, ResponseVerifier.ed25519(ed25519PublicKeySpkiBase64));
     }
 
     public LicenseClient setHwid(String hwid) {
@@ -137,7 +150,6 @@ public final class LicenseClient {
         String responseBody = response.body();
         int statusCode = response.statusCode();
 
-        // If the backend is unhealthy, don't produce misleading signature/parsing failures.
         if (statusCode >= 500) {
             return new LicenseResult(LicenseOutcome.NETWORK_ERROR, product, null, null, responseBody, null);
         }
@@ -149,7 +161,11 @@ public final class LicenseClient {
             signature = signature.trim();
         }
 
-        if (!Hmac.verify(responseBody, hmacSecret, signature)) {
+        String algorithm = response.headers().firstValue("x-signature-alg")
+                .or(() -> response.headers().firstValue("X-Signature-Alg"))
+                .orElse(null);
+
+        if (!verifier.verify(responseBody, signature, algorithm)) {
             return new LicenseResult(LicenseOutcome.SIGNATURE_INVALID, product, null, null, responseBody, null);
         }
 
@@ -218,8 +234,6 @@ public final class LicenseClient {
     }
 
     private static String encodePathSegment(String value) {
-        // Ensure path segments are safe even if they contain special characters.
-        // URLEncoder uses '+' for spaces, which is not appropriate for URL path segments.
         return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
     }
 }
