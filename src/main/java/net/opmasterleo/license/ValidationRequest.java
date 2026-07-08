@@ -10,6 +10,8 @@ public final class ValidationRequest {
     private Consumer<LicenseResult> onValidWithResult;
     private Consumer<LicenseResult> onExpired;
     private Consumer<LicenseResult> onRevoked;
+    private Consumer<LicenseResult> onDeactivated;
+    private Consumer<LicenseResult> onDeleted;
     private Consumer<LicenseResult> onIpNotWhitelisted;
     private Consumer<LicenseResult> onHwidRequired;
     private Consumer<LicenseResult> onMaxHwidExceeded;
@@ -44,6 +46,16 @@ public final class ValidationRequest {
 
     public ValidationRequest onRevoked(Consumer<LicenseResult> callback) {
         this.onRevoked = callback;
+        return this;
+    }
+
+    public ValidationRequest onDeactivated(Consumer<LicenseResult> callback) {
+        this.onDeactivated = callback;
+        return this;
+    }
+
+    public ValidationRequest onDeleted(Consumer<LicenseResult> callback) {
+        this.onDeleted = callback;
         return this;
     }
 
@@ -123,6 +135,12 @@ public final class ValidationRequest {
                 break;
             case REVOKED:
                 if (onRevoked != null) onRevoked.accept(result);
+                break;
+            case DEACTIVATED:
+                if (onDeactivated != null) onDeactivated.accept(result);
+                break;
+            case DELETED:
+                if (onDeleted != null) onDeleted.accept(result);
                 break;
             case IP_NOT_WHITELISTED:
                 if (onIpNotWhitelisted != null) onIpNotWhitelisted.accept(result);

@@ -34,6 +34,14 @@ public class ExamplePlugin extends JavaPlugin {
                     getLogger().severe(result.summary());
                     Bukkit.getPluginManager().disablePlugin(this);
                 })
+                .onDeactivated(result -> {
+                    getLogger().severe(result.summary());
+                    Bukkit.getPluginManager().disablePlugin(this);
+                })
+                .onDeleted(result -> {
+                    getLogger().severe(result.summary());
+                    Bukkit.getPluginManager().disablePlugin(this);
+                })
                 .onIpNotWhitelisted(result -> {
                     getLogger().severe(result.summary());
                     Bukkit.getPluginManager().disablePlugin(this);

@@ -4,6 +4,8 @@ public enum LicenseOutcome {
     VALID,
     EXPIRED,
     REVOKED,
+    DEACTIVATED,
+    DELETED,
     IP_NOT_WHITELISTED,
     HWID_REQUIRED,
     MAX_HWIDS_REACHED,

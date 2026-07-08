@@ -174,6 +174,10 @@ public final class LicenseClient {
                 return LicenseOutcome.REVOKED;
             case "EXPIRED":
                 return LicenseOutcome.EXPIRED;
+            case "DEACTIVATED":
+                return LicenseOutcome.DEACTIVATED;
+            case "DELETED":
+                return LicenseOutcome.DELETED;
             case "IP_NOT_WHITELISTED":
                 return LicenseOutcome.IP_NOT_WHITELISTED;
             case "HWID_REQUIRED":

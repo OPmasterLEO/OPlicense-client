@@ -53,6 +53,10 @@ public final class LicenseResult {
                 return "License expired." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
             case REVOKED:
                 return "License revoked." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
+            case DEACTIVATED:
+                return "License deactivated." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
+            case DELETED:
+                return "License deleted." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
             case IP_NOT_WHITELISTED:
                 return "Server IP is not whitelisted for this license." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
             case HWID_REQUIRED:
