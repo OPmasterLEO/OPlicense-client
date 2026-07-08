@@ -14,7 +14,8 @@ public final class Ed25519 {
 
     public static PublicKey decodePublicKey(String spkiBase64) {
         try {
-            byte[] der = Base64.getDecoder().decode(spkiBase64);
+            String normalized = normalizePublicKey(spkiBase64);
+            byte[] der = Base64.getDecoder().decode(normalized);
             KeyFactory factory = KeyFactory.getInstance("Ed25519");
             return factory.generatePublic(new X509EncodedKeySpec(der));
         } catch (Exception e) {
@@ -34,5 +35,23 @@ public final class Ed25519 {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private static String normalizePublicKey(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        String normalized = value.trim();
+        if (normalized.startsWith("`") && normalized.endsWith("`") && normalized.length() >= 2) {
+            normalized = normalized.substring(1, normalized.length() - 1).trim();
+        }
+
+        normalized = normalized
+                .replace("-----BEGIN PUBLIC KEY-----", "")
+                .replace("-----END PUBLIC KEY-----", "")
+                .replaceAll("\\s+", "");
+
+        return normalized;
     }
 }
