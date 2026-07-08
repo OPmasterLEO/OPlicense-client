@@ -142,7 +142,12 @@ public final class LicenseClient {
             return new LicenseResult(LicenseOutcome.NETWORK_ERROR, product, null, null, responseBody, null);
         }
 
-        String signature = response.headers().firstValue("X-Signature").orElse(null);
+        String signature = response.headers().firstValue("x-signature")
+                .or(() -> response.headers().firstValue("X-Signature"))
+                .orElse(null);
+        if (signature != null) {
+            signature = signature.trim();
+        }
 
         if (!Hmac.verify(responseBody, hmacSecret, signature)) {
             return new LicenseResult(LicenseOutcome.SIGNATURE_INVALID, product, null, null, responseBody, null);

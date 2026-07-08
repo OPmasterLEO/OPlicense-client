@@ -51,7 +51,12 @@ The API URL and the HMAC secret are **not** meant to be configurable by
 whoever runs the server the plugin is installed on. Both belong hardcoded
 directly in your plugin's own private source, right where you construct
 `LicenseClient`. Only the license key itself belongs in something like
-`config.yml`, since that's meant to differ per install:
+`config.yml`, since that's meant to differ per install.
+
+The **HMAC secret** (4th constructor argument) is **not** `GLOBAL_HMAC_SECRET`
+from your backend `.env` by default. Each product has its own secret — get it
+from `/product-info` in Discord (sent via DM), or set `HMAC_SIGNING_MODE=global`
+on the backend and then use `GLOBAL_HMAC_SECRET` everywhere.
 
 ```yaml
 license-key: "XXXX-XXXX-XXXX-XXXX"
@@ -62,7 +67,7 @@ LicenseClient client = new LicenseClient(
     "http://your-vps-ip:3000",   // hardcoded, not from config
     getConfig().getString("license-key"),
     "your-product-slug",
-    "your-products-hmac-secret"   // hardcoded, from /product-create on the backend
+    "your-products-hmac-secret"   // from /product-info (NOT GLOBAL_HMAC_SECRET unless HMAC_SIGNING_MODE=global)
 );
 ```
 
