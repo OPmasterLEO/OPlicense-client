@@ -55,7 +55,7 @@ directly in your plugin's own private source, right where you construct
 
 The **HMAC secret** (4th constructor argument) is **not** `GLOBAL_HMAC_SECRET`
 from your backend `.env` by default. Each product has its own secret — get it
-from `/product-info` in Discord (sent via DM), or set `HMAC_SIGNING_MODE=global`
+from `/product info` in Discord (sent via DM), or set `HMAC_SIGNING_MODE=global`
 on the backend and then use `GLOBAL_HMAC_SECRET` everywhere.
 
 ```yaml
@@ -67,7 +67,7 @@ LicenseClient client = new LicenseClient(
     "http://your-vps-ip:3000",   // hardcoded, not from config
     getConfig().getString("license-key"),
     "your-product-slug",
-    "your-products-hmac-secret"   // from /product-info (NOT GLOBAL_HMAC_SECRET unless HMAC_SIGNING_MODE=global)
+    "your-products-hmac-secret"   // from /product info (NOT GLOBAL_HMAC_SECRET unless HMAC_SIGNING_MODE=global)
 );
 ```
 
