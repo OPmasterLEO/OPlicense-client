@@ -1,5 +1,9 @@
 # OPlicense-client
 
+[![](https://jitci.com/gh/OPmasterLEO/OPlicense-client/svg)](https://jitci.com/gh/OPmasterLEO/OPlicense-client)
+
+[![](https://jitpack.io/v/OPmasterLEO/OPlicense-client.svg)](https://jitpack.io/#OPmasterLEO/OPlicense-client)
+
 Java client SDK for validating licenses against a self-hosted
 [oplicense-backend](../oplicense-backend) instance. No external
 dependencies — uses `java.net.http.HttpClient` (Java 11+) and
