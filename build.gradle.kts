@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "net.opmasterleo"
-version = "1.0.0"
+version = "1.0.3"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -13,6 +13,10 @@ java {
 
 repositories {
     mavenCentral()
+}
+
+tasks.withType<JavaCompile> {
+    options.encoding = "UTF-8"
 }
 
 publishing {

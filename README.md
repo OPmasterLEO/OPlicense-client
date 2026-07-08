@@ -1,9 +1,5 @@
 # OPlicense-client
 
-
-
-
-
 Java client SDK for validating licenses against a self-hosted
 [oplicense-backend](../oplicense-backend) instance. No external
 dependencies — uses `java.net.http.HttpClient` (Java 11+) and
@@ -20,7 +16,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.opmasterleo:OPlicense-client:1.0.2")
+    implementation("com.github.opmasterleo:OPlicense-client:1.0.3")
 }
 ```
 
@@ -37,7 +33,7 @@ Maven:
 <dependency>
     <groupId>com.github.opmasterleo</groupId>
     <artifactId>OPlicense-client</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 </dependency>
 ```
 
