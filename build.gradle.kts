@@ -3,8 +3,8 @@ plugins {
     id("maven-publish")
 }
 
-group = "net.opmasterleo"
-version = "1.0.3"
+group = (findProperty("group") as String?)?.takeIf { it.isNotBlank() } ?: "net.opmasterleo"
+version = (findProperty("version") as String?)?.takeIf { it.isNotBlank() } ?: "1.0.4"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -22,6 +22,9 @@ tasks.withType<JavaCompile> {
 publishing {
     publications {
         create<MavenPublication>("maven") {
+            groupId = project.group.toString()
+            artifactId = rootProject.name
+            version = project.version.toString()
             from(components["java"])
         }
     }
