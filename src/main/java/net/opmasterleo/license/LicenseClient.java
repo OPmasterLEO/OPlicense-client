@@ -10,10 +10,13 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.security.SecureRandom;
 
 public final class LicenseClient {
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     private final String apiUrl;
     private final String licenseKey;
@@ -88,8 +91,10 @@ public final class LicenseClient {
     }
 
     LicenseResult execute() {
+        String requestNonce = randomNonce();
         Map<String, Object> fields = new LinkedHashMap<>();
         fields.put("timestamp", System.currentTimeMillis() / 1000);
+        fields.put("nonce", requestNonce);
         fields.put("hwid", hwid);
         fields.put("macAddress", macAddress);
         fields.put("productVersion", productVersion);
@@ -171,6 +176,25 @@ public final class LicenseClient {
         }
 
         Map<String, String> parsed = SimpleJson.parseFlat(responseBody);
+        String echoedNonce = parsed.get("requestNonce");
+        if (!requestNonce.equals(echoedNonce)) {
+            return new LicenseResult(LicenseOutcome.RESPONSE_INVALID, product, null, null, responseBody, null);
+        }
+
+        Long issuedAt = parseLongOrNull(parsed.get("issuedAt"));
+        if (issuedAt == null) {
+            return new LicenseResult(LicenseOutcome.RESPONSE_INVALID, product, null, null, responseBody, null);
+        }
+        long now = System.currentTimeMillis() / 1000;
+        if (Math.abs(now - issuedAt) > 120) {
+            return new LicenseResult(LicenseOutcome.RESPONSE_INVALID, product, null, null, responseBody, null);
+        }
+
+        String responseProduct = parsed.get("product");
+        if (responseProduct != null && !responseProduct.equals(product)) {
+            return new LicenseResult(LicenseOutcome.RESPONSE_INVALID, product, null, null, responseBody, null);
+        }
+
         boolean valid = "true".equals(parsed.get("valid"));
         String status = parsed.get("status");
         String expiresAt = parsed.get("expiresAt");
@@ -214,9 +238,26 @@ public final class LicenseClient {
                 return LicenseOutcome.TIMESTAMP_DESYNC;
             case "RATE_LIMITED":
                 return LicenseOutcome.RATE_LIMITED;
+            case "NONCE_INVALID":
+                return LicenseOutcome.NONCE_INVALID;
             default:
                 return LicenseOutcome.NETWORK_ERROR;
         }
+    }
+
+    private static Long parseLongOrNull(String value) {
+        if (value == null) return null;
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    private static String randomNonce() {
+        byte[] raw = new byte[24];
+        RANDOM.nextBytes(raw);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(raw);
     }
 
     private static String defaultHwid() {

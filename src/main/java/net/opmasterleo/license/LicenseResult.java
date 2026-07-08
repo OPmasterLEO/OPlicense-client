@@ -77,10 +77,13 @@ public final class LicenseResult {
                 return "Request timestamp is out of sync with the server.";
             case RATE_LIMITED:
                 return "Too many validation attempts; please try again shortly.";
+            case NONCE_INVALID:
+                return "Request nonce was rejected by the license server.";
+            case RESPONSE_INVALID:
+                return "License response failed local anti-replay checks.";
             case SIGNATURE_INVALID:
                 return "License response could not be verified (signature mismatch). "
-                        + "If using HMAC mode, confirm the product secret from /product info. "
-                        + "If using Ed25519 mode, embed only the public key from /product info.";
+                        + "Confirm the Ed25519 public key from /product info is correct.";
             case NETWORK_ERROR:
                 return "Could not reach the license server.";
             default:

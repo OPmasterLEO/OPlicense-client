@@ -172,6 +172,8 @@ public final class ValidationRequest {
             case RATE_LIMITED:
                 if (onRateLimited != null) onRateLimited.accept(result);
                 break;
+            case NONCE_INVALID:
+            case RESPONSE_INVALID:
             case SIGNATURE_INVALID:
                 if (onSignatureInvalid != null) onSignatureInvalid.accept(result);
                 break;
