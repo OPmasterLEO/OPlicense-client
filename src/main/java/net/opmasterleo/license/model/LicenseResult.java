@@ -6,6 +6,7 @@ public final class LicenseResult {
     private final String product;
     private final String status;
     private final String expiresAt;
+    private final String owner;
     private final String ownerDiscordId;
     private final String serverId;
     private final String[] whitelistedIps;
@@ -15,7 +16,7 @@ public final class LicenseResult {
     private final Exception networkError;
 
     public LicenseResult(LicenseOutcome outcome, String product, String status, String expiresAt, String rawBody, Exception networkError) {
-        this(outcome, product, status, expiresAt, null, null, null, null, null, rawBody, networkError);
+        this(outcome, product, status, expiresAt, null, null, null, null, null, null, rawBody, networkError);
     }
 
     public LicenseResult(
@@ -29,7 +30,7 @@ public final class LicenseResult {
             String rawBody,
             Exception networkError
     ) {
-        this(outcome, product, status, expiresAt, ownerDiscordId, serverId, whitelistedIps, null, null, rawBody, networkError);
+        this(outcome, product, status, expiresAt, null, ownerDiscordId, serverId, whitelistedIps, null, null, rawBody, networkError);
     }
 
     public LicenseResult(
@@ -44,7 +45,7 @@ public final class LicenseResult {
             String rawBody,
             Exception networkError
     ) {
-        this(outcome, product, status, expiresAt, ownerDiscordId, serverId, whitelistedIps, environment, null, rawBody, networkError);
+        this(outcome, product, status, expiresAt, null, ownerDiscordId, serverId, whitelistedIps, environment, null, rawBody, networkError);
     }
 
     public LicenseResult(
@@ -52,6 +53,7 @@ public final class LicenseResult {
             String product,
             String status,
             String expiresAt,
+            String owner,
             String ownerDiscordId,
             String serverId,
             String[] whitelistedIps,
@@ -64,6 +66,7 @@ public final class LicenseResult {
         this.product = product;
         this.status = status;
         this.expiresAt = expiresAt;
+        this.owner = owner;
         this.ownerDiscordId = ownerDiscordId;
         this.serverId = serverId;
         this.whitelistedIps = whitelistedIps == null ? new String[0] : whitelistedIps.clone();
@@ -78,6 +81,7 @@ public final class LicenseResult {
             String product,
             String status,
             String expiresAt,
+            String owner,
             String ownerDiscordId,
             String serverId,
             String[] whitelistedIps,
@@ -91,6 +95,7 @@ public final class LicenseResult {
                 product,
                 status,
                 expiresAt,
+                owner,
                 ownerDiscordId,
                 serverId,
                 whitelistedIps,
@@ -115,6 +120,12 @@ public final class LicenseResult {
 
     public String expiresAt() {
         return expiresAt;
+    }
+
+    /** Discord display name when the API resolved it; otherwise falls back to the snowflake ID. */
+    public String owner() {
+        if (owner != null && !owner.isBlank()) return owner;
+        return ownerDiscordId;
     }
 
     public String ownerDiscordId() {

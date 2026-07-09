@@ -56,6 +56,7 @@ final class LicenseResponseParser {
         boolean valid = "true".equals(parsed.get("valid"));
         String status = parsed.get("status");
         String expiresAt = parsed.get("expiresAt");
+        String owner = firstNonBlank(parsed.get("owner"), parsed.get("ownerUsername"));
         String ownerDiscordId = parsed.get("ownerDiscordId");
         String serverId = parsed.get("serverId");
         String[] whitelistedIps = SimpleJson.parseStringArray(responseBody, "whitelistedIps");
@@ -67,6 +68,7 @@ final class LicenseResponseParser {
                     product,
                     status,
                     expiresAt,
+                    owner,
                     ownerDiscordId,
                     serverId,
                     whitelistedIps,
@@ -82,6 +84,7 @@ final class LicenseResponseParser {
                 product,
                 status,
                 expiresAt,
+                owner,
                 ownerDiscordId,
                 serverId,
                 whitelistedIps,
@@ -121,11 +124,19 @@ final class LicenseResponseParser {
                 null,
                 null,
                 null,
+                null,
                 environment,
                 LicenseUpdate.of(runtime.productVersion(), null, false),
                 rawBody,
                 networkError
         );
+    }
+
+    private static String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) return value;
+        }
+        return null;
     }
 
     private static LicenseUpdate parseUpdate(String currentVersion, Map<String, String> parsed) {
