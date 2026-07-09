@@ -1,7 +1,7 @@
-# OPlicense-client
+# OPLicense Client
 
 Java client SDK for validating licenses against a self-hosted
-[oplicense-backend](../oplicense-backend) instance. No external
+[OPLicense backend](../oplicense-backend) instance. No external
 dependencies — uses `java.net.http.HttpClient` (Java 11+) and
 `javax.crypto` from the standard library only, so there's nothing to
 shade or relocate.
@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.opmasterleo:OPlicense-client:1.1.0")
+    implementation("com.github.opmasterleo:OPlicense-client:1.1.1")
 }
 ```
 
@@ -33,9 +33,11 @@ Maven:
 <dependency>
     <groupId>com.github.opmasterleo</groupId>
     <artifactId>OPlicense-client</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
 </dependency>
 ```
+
+
 
 ## Package layout
 
@@ -95,6 +97,8 @@ LicenseClient client = LicenseClient.withEd25519(
 );
 ```
 
+
+
 ## Hiding strings from casual decompilation
 
 ProGuard and similar tools **rename classes** but usually leave string literals
@@ -123,7 +127,7 @@ and fake license servers; it does not stop dedicated crackers.
 
 ## Obfuscation Compatibility
 
-`OPlicense-client` is designed to survive heavy plugin obfuscation, including
+`OPLicense Client` is designed to survive heavy plugin obfuscation, including
 ProGuard/R8 and Skidfuscator. Verifier internals now use explicit concrete
 classes (not synthetic lambda implementations) to reduce runtime linkage issues
 like `AbstractMethodError` / `NoSuchMethodError` at verifier call sites.
@@ -132,6 +136,8 @@ For consumer keep rules, see `[PROGUARD.md](./PROGUARD.md)`. Keep exemptions
 minimal and focused on signature-critical classes only.
 
 ## Basic usage
+
+Validate once at the top of `onEnable` with OPLicense before anything else runs:
 
 ```java
 client.validate()
@@ -154,25 +160,25 @@ last-known-good result.
 ## Full outcome list
 
 
-| Callback                     | Fires when                                                                     |
-| ---------------------------- | ------------------------------------------------------------------------------ |
-| `onValid()`                  | License is good                                                                |
-| `onExpired(result)`          | Past its expiry date                                                           |
-| `onRevoked(result)`          | Explicitly revoked by an admin                                                 |
-| `onIpNotWhitelisted(result)` | This server's IP isn't on the license's whitelist                              |
-| `onProductMismatch(result)`  | Key doesn't belong to this product                                             |
-| `onProductArchived(result)`  | Product has been discontinued                                                  |
-| `onLicenseNotFound(result)`  | Key doesn't exist                                                              |
-| `onTimestampDesync(result)`  | Server clock drift outside the allowed window                                  |
-| `onRateLimited(result)`      | Too many recent validate attempts for this key/IP                              |
+| Callback                     | Fires when                                                                         |
+| ---------------------------- | ---------------------------------------------------------------------------------- |
+| `onValid()`                  | License is good                                                                    |
+| `onExpired(result)`          | Past its expiry date                                                               |
+| `onRevoked(result)`          | Explicitly revoked by an admin                                                     |
+| `onIpNotWhitelisted(result)` | This server's IP isn't on the license's whitelist                                  |
+| `onProductMismatch(result)`  | Key doesn't belong to this product                                                 |
+| `onProductArchived(result)`  | Product has been discontinued                                                      |
+| `onLicenseNotFound(result)`  | Key doesn't exist                                                                  |
+| `onTimestampDesync(result)`  | Server clock drift outside the allowed window                                      |
+| `onRateLimited(result)`      | Too many recent validate attempts for this key/IP                                  |
 | `onSignatureInvalid(result)` | Response didn't verify against the public key — treat as a possible spoofed server |
-| `onNetworkError(exception)`  | Couldn't reach the backend at all                                              |
+| `onNetworkError(exception)`  | Couldn't reach the backend at all                                                  |
 
 
 Any callback you don't set is simply skipped — nothing runs. There's no
 forced console output or banner; build whatever presentation fits your
 plugin's own style using the `LicenseResult` data (`result.status()`,
-`result.expiresAt()`, `result.ownerDiscordId()`, `result.serverId()`,
+`result.expiresAt()`, `result.owner()`, `result.ownerDiscordId()`, `result.serverId()`,
 `result.whitelistedIps()`, `result.rawBody()`).
 
 ## Optional environment fields
@@ -185,6 +191,8 @@ client.setProductVersion(getDescription().getVersion())
       .setServerSoftware(Bukkit.getName(), Bukkit.getVersion())
       .setContainer("pterodactyl");
 ```
+
+
 
 ### Plugin updater message
 
@@ -269,7 +277,7 @@ client.setHwid("your-stable-server-id");
 
 ## Advanced: why signed responses matter
 
-Every response from the backend is Ed25519-signed, and `LicenseClient` verifies it
+Every response from the OPLicense backend is Ed25519-signed, and `LicenseClient` verifies it
 before trusting the payload. A forged host cannot produce a valid signature
 without the product's private key (which never ships in plugins).
 
