@@ -1,5 +1,8 @@
 package net.opmasterleo.license.internal;
 
+import java.lang.management.ManagementFactory;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,6 +12,15 @@ public final class EnvironmentResolver {
             "P_SERVER_UUID",
             "P_SERVER_ID",
             "PTERODACTYL_SERVER_UUID"
+    };
+
+    private static final String[] PTERODACTYL_NODE_KEYS = {
+            "OPLICENSE_PTERODACTYL_NODE",
+            "PTERODACTYL_NODE",
+            "P_NODE_NAME",
+            "P_NODE_ID",
+            "NODE_NAME",
+            "NODE_ID"
     };
 
     private EnvironmentResolver() {
@@ -42,7 +54,61 @@ public final class EnvironmentResolver {
         return isPterodactylLike() ? "?" : "unknown";
     }
 
-    private static boolean isPterodactylLike() {
+    public static String resolveContainerLabel() {
+        if (isPterodactylLike()) return "pterodactyl";
+        return firstNonBlank(System.getenv("OPLICENSE_CONTAINER"), System.getProperty("oplicense.container"));
+    }
+
+    public static double resolveCpuCores() {
+        String override = firstNonBlank(
+                System.getenv("OPLICENSE_CPU_CORES"),
+                System.getProperty("oplicense.cpu.cores")
+        );
+        if (override != null) {
+            try {
+                return Double.parseDouble(override.trim());
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
+        Double cgroupLimit = readCgroupCpuLimit();
+        if (cgroupLimit != null && cgroupLimit > 0) {
+            return cgroupLimit;
+        }
+
+        return Runtime.getRuntime().availableProcessors();
+    }
+
+    public static int resolveThreadCount() {
+        try {
+            return ManagementFactory.getThreadMXBean().getThreadCount();
+        } catch (Exception ignored) {
+            return Thread.activeCount();
+        }
+    }
+
+    public static String resolvePterodactylNode() {
+        return firstNonBlank(envValues(PTERODACTYL_NODE_KEYS));
+    }
+
+    public static String resolvePterodactylServerId() {
+        return firstNonBlank(
+                System.getenv("OPLICENSE_PTERODACTYL_SERVER_ID"),
+                System.getenv("P_SERVER_ID"),
+                System.getenv("PTERODACTYL_SERVER_ID")
+        );
+    }
+
+    public static String resolvePterodactylServerUuid() {
+        return firstNonBlank(
+                System.getenv("OPLICENSE_PTERODACTYL_SERVER_UUID"),
+                System.getenv("P_SERVER_UUID"),
+                System.getenv("SERVER_UUID"),
+                System.getenv("PTERODACTYL_SERVER_UUID")
+        );
+    }
+
+    public static boolean isPterodactylLike() {
         for (String key : PTERODACTYL_MARKERS) {
             String marker = System.getenv(key);
             if (marker != null && !marker.trim().isEmpty()) {
@@ -51,6 +117,68 @@ public final class EnvironmentResolver {
         }
         String container = System.getenv("container");
         return container != null && container.equalsIgnoreCase("pterodactyl");
+    }
+
+    private static Double readCgroupCpuLimit() {
+        Double v2 = readCgroupV2CpuMax(Path.of("/sys/fs/cgroup/cpu.max"));
+        if (v2 != null) return v2;
+
+        v2 = readCgroupV2CpuMax(Path.of("/sys/fs/cgroup/cpu/cpu.max"));
+        if (v2 != null) return v2;
+
+        return readCgroupV1CpuLimit();
+    }
+
+    private static Double readCgroupV2CpuMax(Path path) {
+        try {
+            if (!Files.exists(path)) return null;
+            String raw = Files.readString(path).trim();
+            if (raw.isEmpty() || "max".equalsIgnoreCase(raw)) return null;
+
+            String[] parts = raw.split("\\s+");
+            if (parts.length != 2) return null;
+
+            long quota = Long.parseLong(parts[0]);
+            long period = Long.parseLong(parts[1]);
+            if (quota <= 0 || period <= 0) return null;
+            return (double) quota / period;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private static Double readCgroupV1CpuLimit() {
+        Path[][] candidates = {
+                {
+                        Path.of("/sys/fs/cgroup/cpu/cpu.cfs_quota_us"),
+                        Path.of("/sys/fs/cgroup/cpu/cpu.cfs_period_us")
+                },
+                {
+                        Path.of("/sys/fs/cgroup/cpu,cpuacct/cpu.cfs_quota_us"),
+                        Path.of("/sys/fs/cgroup/cpu,cpuacct/cpu.cfs_period_us")
+                }
+        };
+
+        for (Path[] pair : candidates) {
+            try {
+                if (!Files.exists(pair[0]) || !Files.exists(pair[1])) continue;
+                long quota = Long.parseLong(Files.readString(pair[0]).trim());
+                if (quota <= 0) return null;
+                long period = Long.parseLong(Files.readString(pair[1]).trim());
+                if (period <= 0) return null;
+                return (double) quota / period;
+            } catch (Exception ignored) {
+            }
+        }
+        return null;
+    }
+
+    private static List<String> envValues(String[] keys) {
+        List<String> values = new ArrayList<>();
+        for (String key : keys) {
+            values.add(System.getenv(key));
+        }
+        return values;
     }
 
     private static String firstNonBlank(String... values) {

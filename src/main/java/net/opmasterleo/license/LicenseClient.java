@@ -39,6 +39,7 @@ public final class LicenseClient {
     private String userDir = EnvironmentResolver.resolveUserDir();
     private String userHome = EnvironmentResolver.resolveUserHome();
     private String userName = EnvironmentResolver.resolveUserName();
+    private String pterodactylNode;
 
     public LicenseClient(String apiUrl, String licenseKey, String product, ResponseVerifier verifier) {
         if (apiUrl == null || licenseKey == null || product == null || verifier == null) {
@@ -107,11 +108,22 @@ public final class LicenseClient {
         return this;
     }
 
+    public LicenseClient setPterodactylNode(String pterodactylNode) {
+        this.pterodactylNode = pterodactylNode;
+        return this;
+    }
+
+    /** Captures the environment snapshot that would be sent on the next validate call. */
+    public LicenseEnvironment environment() {
+        return LicenseEnvironment.capture(userDir, userHome, userName, container, pterodactylNode);
+    }
+
     public ValidationRequest validate() {
         return new ValidationRequest(this);
     }
 
     LicenseResult execute() {
+        LicenseEnvironment environment = environment();
         String requestNonce = randomNonce();
         Map<String, Object> fields = new LinkedHashMap<>();
         fields.put("timestamp", System.currentTimeMillis() / 1000);
@@ -125,10 +137,15 @@ public final class LicenseClient {
         fields.put("javaVersion", javaVersion);
         fields.put("serverSoftware", serverSoftware);
         fields.put("serverSoftwareVersion", serverSoftwareVersion);
-        fields.put("container", container);
-        fields.put("userDir", userDir);
-        fields.put("userHome", userHome);
-        fields.put("userName", userName);
+        fields.put("container", environment.container());
+        fields.put("userDir", environment.userDir());
+        fields.put("userHome", environment.userHome());
+        fields.put("userName", environment.userName());
+        fields.put("cpuCores", environment.cpuCores());
+        fields.put("threadCount", environment.threadCount());
+        if (environment.pterodactylNode() != null) fields.put("pterodactylNode", environment.pterodactylNode());
+        if (environment.pterodactylServerId() != null) fields.put("pterodactylServerId", environment.pterodactylServerId());
+        if (environment.pterodactylServerUuid() != null) fields.put("pterodactylServerUuid", environment.pterodactylServerUuid());
 
         String requestBody = SimpleJson.object(fields);
         String url = apiUrl + "/v1/license/" + encodePathSegment(product) + "/" + encodePathSegment(licenseKey);
@@ -150,10 +167,10 @@ public final class LicenseClient {
                 break;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                return new LicenseResult(LicenseOutcome.NETWORK_ERROR, product, null, null, null, e);
+                return new LicenseResult(LicenseOutcome.NETWORK_ERROR, product, null, null, null, environment, null, e);
             } catch (IOException e) {
                 if (attempt >= maxAttempts) {
-                    return new LicenseResult(LicenseOutcome.NETWORK_ERROR, product, null, null, null, e);
+                    return new LicenseResult(LicenseOutcome.NETWORK_ERROR, product, null, null, null, environment, null, e);
                 }
                 try {
                     long sleepMs = backoffBaseMs * attempt;
