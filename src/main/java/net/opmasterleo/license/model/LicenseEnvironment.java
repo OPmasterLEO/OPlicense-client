@@ -8,6 +8,7 @@ public final class LicenseEnvironment {
     private final String userHome;
     private final String userName;
     private final String container;
+    private final String cpuModel;
     private final double cpuCores;
     private final int threadCount;
     private final String pterodactylNode;
@@ -19,6 +20,7 @@ public final class LicenseEnvironment {
             String userHome,
             String userName,
             String container,
+            String cpuModel,
             double cpuCores,
             int threadCount,
             String pterodactylNode,
@@ -29,6 +31,7 @@ public final class LicenseEnvironment {
         this.userHome = userHome;
         this.userName = userName;
         this.container = container;
+        this.cpuModel = cpuModel;
         this.cpuCores = cpuCores;
         this.threadCount = threadCount;
         this.pterodactylNode = pterodactylNode;
@@ -48,6 +51,7 @@ public final class LicenseEnvironment {
                 userHome,
                 userName,
                 container != null ? container : EnvironmentResolver.resolveContainerLabel(),
+                EnvironmentResolver.resolveCpuModel(),
                 EnvironmentResolver.resolveCpuCores(),
                 EnvironmentResolver.resolveThreadCount(),
                 pterodactylNode != null ? pterodactylNode : EnvironmentResolver.resolvePterodactylNode(),
@@ -72,12 +76,17 @@ public final class LicenseEnvironment {
         return container;
     }
 
+    /** Host CPU model name when available (e.g. AMD Ryzen 9 9950X 16-Core Processor). */
+    public String cpuModel() {
+        return cpuModel;
+    }
+
     /** CPU cores allocated to this JVM process (cgroup-aware on Pterodactyl/Docker). */
     public double cpuCores() {
         return cpuCores;
     }
 
-    /** Live JVM thread count for this server process (not the whole Pterodactyl node). */
+    /** Logical CPU count visible to the JVM (hardware threads, cgroup-aware). */
     public int threadCount() {
         return threadCount;
     }

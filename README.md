@@ -213,8 +213,9 @@ Defaults are also collected automatically:
 - `userDir` from JVM `user.dir` (e.g. `C:\...\lifesteal` on Windows, `/home/container` on Pterodactyl)
 - `userHome` from JVM `user.home`
 - `userName` from `USER` / `USERNAME` / JVM `user.name` (`?` on Pterodactyl when unavailable)
+- `cpuModel` from `/proc/cpuinfo` on Linux or WMI on Windows (override with `OPLICENSE_CPU_MODEL`)
 - `cpuCores` from container cgroup CPU limit when available (falls back to JVM processors)
-- `threadCount` from live JVM thread count (this server process only)
+- `threadCount` as logical CPU count visible to the JVM (`availableProcessors`, cgroup-aware)
 - `pterodactylServerId` / `pterodactylServerUuid` from `P_SERVER_ID` / `P_SERVER_UUID`
 - `pterodactylNode` from `PTERODACTYL_NODE` / `P_NODE_NAME` (set in egg startup if Wings does not inject it)
 
@@ -224,7 +225,8 @@ Read them in your plugin before or after validate:
 LicenseEnvironment env = client.environment();
 // or after validate: result.environment()
 
-double cpus = env.cpuCores();
+String cpu = env.cpuModel();
+double allocatedCores = env.cpuCores();
 int threads = env.threadCount();
 String node = env.pterodactylNode();
 ```

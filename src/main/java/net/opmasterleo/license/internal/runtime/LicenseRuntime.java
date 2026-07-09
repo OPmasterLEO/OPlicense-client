@@ -101,6 +101,7 @@ public final class LicenseRuntime {
         fields.put("userDir", environment.userDir());
         fields.put("userHome", environment.userHome());
         fields.put("userName", environment.userName());
+        if (environment.cpuModel() != null) fields.put("cpuModel", environment.cpuModel());
         fields.put("cpuCores", environment.cpuCores());
         fields.put("threadCount", environment.threadCount());
         if (environment.pterodactylNode() != null) fields.put("pterodactylNode", environment.pterodactylNode());

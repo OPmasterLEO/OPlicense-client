@@ -29,8 +29,21 @@ class EnvironmentResolverTest {
     }
 
     @Test
-    void resolvesThreadCount() {
-        assertTrue(EnvironmentResolver.resolveThreadCount() > 0);
+    void resolvesThreadCountAsAvailableProcessors() {
+        assertEquals(Runtime.getRuntime().availableProcessors(), EnvironmentResolver.resolveThreadCount());
+    }
+
+    @Test
+    void respectsCpuModelOverrideProperty() {
+        String key = "oplicense.cpu.model";
+        String previous = System.getProperty(key);
+        try {
+            System.setProperty(key, "AMD Ryzen 7 7800X3D 8-Core Processor");
+            assertEquals("AMD Ryzen 7 7800X3D 8-Core Processor", EnvironmentResolver.resolveCpuModel());
+        } finally {
+            if (previous == null) System.clearProperty(key);
+            else System.setProperty(key, previous);
+        }
     }
 
     @Test

@@ -1,10 +1,12 @@
 package net.opmasterleo.license.internal.environment;
 
-import java.lang.management.ManagementFactory;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public final class EnvironmentResolver {
 
@@ -59,6 +61,19 @@ public final class EnvironmentResolver {
         return firstNonBlank(System.getenv("OPLICENSE_CONTAINER"), System.getProperty("oplicense.container"));
     }
 
+    public static String resolveCpuModel() {
+        String override = firstNonBlank(
+                System.getenv("OPLICENSE_CPU_MODEL"),
+                System.getProperty("oplicense.cpu.model")
+        );
+        if (override != null) return override;
+
+        String linux = readLinuxCpuModel();
+        if (linux != null) return linux;
+
+        return readWindowsCpuModel();
+    }
+
     public static double resolveCpuCores() {
         String override = firstNonBlank(
                 System.getenv("OPLICENSE_CPU_CORES"),
@@ -79,12 +94,9 @@ public final class EnvironmentResolver {
         return Runtime.getRuntime().availableProcessors();
     }
 
+    /** Logical CPU count visible to the JVM (hardware threads, cgroup-aware). */
     public static int resolveThreadCount() {
-        try {
-            return ManagementFactory.getThreadMXBean().getThreadCount();
-        } catch (Exception ignored) {
-            return Thread.activeCount();
-        }
+        return Runtime.getRuntime().availableProcessors();
     }
 
     public static String resolvePterodactylNode() {
@@ -171,6 +183,52 @@ public final class EnvironmentResolver {
             }
         }
         return null;
+    }
+
+    private static String readLinuxCpuModel() {
+        try {
+            Path path = Path.of("/proc/cpuinfo");
+            if (!Files.exists(path)) return null;
+            for (String line : Files.readAllLines(path)) {
+                String lower = line.toLowerCase();
+                if (lower.startsWith("model name") || lower.startsWith("hardware")) {
+                    int idx = line.indexOf(':');
+                    if (idx >= 0) {
+                        String value = line.substring(idx + 1).trim();
+                        if (!value.isEmpty()) return value;
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    private static String readWindowsCpuModel() {
+        String os = System.getProperty("os.name", "");
+        if (!os.toLowerCase().contains("win")) return null;
+
+        try {
+            Process process = new ProcessBuilder(
+                    "powershell",
+                    "-NoProfile",
+                    "-Command",
+                    "(Get-CimInstance Win32_Processor | Select-Object -First 1 -ExpandProperty Name)"
+            ).redirectErrorStream(true).start();
+
+            if (!process.waitFor(3, TimeUnit.SECONDS)) {
+                process.destroyForcibly();
+                return null;
+            }
+            if (process.exitValue() != 0) return null;
+
+            try (InputStream in = process.getInputStream()) {
+                String output = new String(in.readAllBytes(), StandardCharsets.UTF_8).trim();
+                return output.isEmpty() ? null : output;
+            }
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     private static List<String> envValues(String[] keys) {
