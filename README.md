@@ -157,14 +157,33 @@ Defaults are also collected automatically:
 - `userDir` from JVM `user.dir` (e.g. `C:\...\lifesteal` on Windows, `/home/container` on Pterodactyl)
 - `userHome` from JVM `user.home`
 - `userName` from `USER` / `USERNAME` / JVM `user.name` (`?` on Pterodactyl when unavailable)
+- `cpuCores` from container cgroup CPU limit when available (falls back to JVM processors)
+- `threadCount` from live JVM thread count (this server process only)
+- `pterodactylServerId` / `pterodactylServerUuid` from `P_SERVER_ID` / `P_SERVER_UUID`
+- `pterodactylNode` from `PTERODACTYL_NODE` / `P_NODE_NAME` (set in egg startup if Wings does not inject it)
+
+Read them in your plugin before or after validate:
+
+```java
+LicenseEnvironment env = client.environment();
+// or after validate: result.environment()
+
+double cpus = env.cpuCores();
+int threads = env.threadCount();
+String node = env.pterodactylNode();
+```
 
 Override with env vars (`OPLICENSE_USER_DIR`, `OPLICENSE_USER_HOME`, `OPLICENSE_USER_NAME`) or:
 
 ```java
 client.setUserDir("C:\\path\\to\\server")
       .setUserHome("C:\\Users\\YourName")
-      .setUserName("YourName");
+      .setUserName("YourName")
+      .setPterodactylNode("node-01");
 ```
+
+For Pterodactyl node name, add to your egg startup env if not present:
+`PTERODACTYL_NODE={{node.name}}` or `OPLICENSE_PTERODACTYL_NODE={{node.name}}`.
 
 They're sent along with every request purely for your own visibility —
 the backend logs them to your Discord log channel — and are never used

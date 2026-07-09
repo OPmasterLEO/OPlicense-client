@@ -167,29 +167,27 @@ public final class LicenseClient {
                 break;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                return new LicenseResult(LicenseOutcome.NETWORK_ERROR, product, null, null, null, environment, null, e);
+                return resultWithEnvironment(LicenseOutcome.NETWORK_ERROR, null, e, environment);
             } catch (IOException e) {
                 if (attempt >= maxAttempts) {
-                    return new LicenseResult(LicenseOutcome.NETWORK_ERROR, product, null, null, null, environment, null, e);
+                    return resultWithEnvironment(LicenseOutcome.NETWORK_ERROR, null, e, environment);
                 }
                 try {
                     long sleepMs = backoffBaseMs * attempt;
                     Thread.sleep(sleepMs);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
-                    return new LicenseResult(LicenseOutcome.NETWORK_ERROR, product, null, null, null, ie);
+                    return resultWithEnvironment(LicenseOutcome.NETWORK_ERROR, null, ie, environment);
                 }
             }
         }
 
         if (response == null) {
-            return new LicenseResult(
+            return resultWithEnvironment(
                     LicenseOutcome.NETWORK_ERROR,
-                    product,
                     null,
-                    null,
-                    null,
-                    new IOException("No response received")
+                    new IOException("No response received"),
+                    environment
             );
         }
 
@@ -198,7 +196,7 @@ public final class LicenseClient {
         int statusCode = finalResponse.statusCode();
 
         if (statusCode >= 500) {
-            return new LicenseResult(LicenseOutcome.NETWORK_ERROR, product, null, null, responseBody, null);
+            return resultWithEnvironment(LicenseOutcome.NETWORK_ERROR, responseBody, null, environment);
         }
 
         String signature = finalResponse.headers().firstValue("x-signature")
@@ -213,27 +211,27 @@ public final class LicenseClient {
                 .orElse(null);
 
         if (!verifier.verify(responseBody, signature, algorithm)) {
-            return new LicenseResult(LicenseOutcome.SIGNATURE_INVALID, product, null, null, responseBody, null);
+            return resultWithEnvironment(LicenseOutcome.SIGNATURE_INVALID, responseBody, null, environment);
         }
 
         Map<String, String> parsed = SimpleJson.parseFlat(responseBody);
         String echoedNonce = parsed.get("requestNonce");
         if (!requestNonce.equals(echoedNonce)) {
-            return new LicenseResult(LicenseOutcome.RESPONSE_INVALID, product, null, null, responseBody, null);
+            return resultWithEnvironment(LicenseOutcome.RESPONSE_INVALID, responseBody, null, environment);
         }
 
         Long issuedAt = parseLongOrNull(parsed.get("issuedAt"));
         if (issuedAt == null) {
-            return new LicenseResult(LicenseOutcome.RESPONSE_INVALID, product, null, null, responseBody, null);
+            return resultWithEnvironment(LicenseOutcome.RESPONSE_INVALID, responseBody, null, environment);
         }
         long now = System.currentTimeMillis() / 1000;
         if (Math.abs(now - issuedAt) > 120) {
-            return new LicenseResult(LicenseOutcome.RESPONSE_INVALID, product, null, null, responseBody, null);
+            return resultWithEnvironment(LicenseOutcome.RESPONSE_INVALID, responseBody, null, environment);
         }
 
         String responseProduct = parsed.get("product");
         if (responseProduct != null && !responseProduct.equals(product)) {
-            return new LicenseResult(LicenseOutcome.RESPONSE_INVALID, product, null, null, responseBody, null);
+            return resultWithEnvironment(LicenseOutcome.RESPONSE_INVALID, responseBody, null, environment);
         }
 
         boolean valid = "true".equals(parsed.get("valid"));
@@ -252,6 +250,7 @@ public final class LicenseClient {
                     ownerDiscordId,
                     serverId,
                     whitelistedIps,
+                    environment,
                     responseBody,
                     null
             );
@@ -266,8 +265,29 @@ public final class LicenseClient {
                 ownerDiscordId,
                 serverId,
                 whitelistedIps,
+                environment,
                 responseBody,
                 null
+        );
+    }
+
+    private LicenseResult resultWithEnvironment(
+            LicenseOutcome outcome,
+            String rawBody,
+            Exception networkError,
+            LicenseEnvironment environment
+    ) {
+        return new LicenseResult(
+                outcome,
+                product,
+                null,
+                null,
+                null,
+                null,
+                null,
+                environment,
+                rawBody,
+                networkError
         );
     }
 

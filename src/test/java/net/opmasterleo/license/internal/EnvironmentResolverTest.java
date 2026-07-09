@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EnvironmentResolverTest {
 
@@ -25,5 +26,15 @@ class EnvironmentResolverTest {
             if (previous == null) System.clearProperty(key);
             else System.setProperty(key, previous);
         }
+    }
+
+    @Test
+    void resolvesThreadCount() {
+        assertTrue(EnvironmentResolver.resolveThreadCount() > 0);
+    }
+
+    @Test
+    void resolvesCpuCores() {
+        assertTrue(EnvironmentResolver.resolveCpuCores() > 0);
     }
 }
