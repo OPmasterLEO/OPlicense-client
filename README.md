@@ -33,7 +33,7 @@ Maven:
 <dependency>
     <groupId>com.github.opmasterleo</groupId>
     <artifactId>OPlicense-client</artifactId>
-    <version>1.1.1</version>
+    <version>1.1.2</version>
 </dependency>
 ```
 
@@ -157,18 +157,18 @@ last-known-good result.
 ## Full outcome list
 
 
-| Callback                     | Fires when                                                                         |
-| ---------------------------- | ---------------------------------------------------------------------------------- |
-| `onValid()`                  | License is good                                                                    |
-| `onExpired(result)`          | Past its expiry date                                                               |
-| `onRevoked(result)`          | Explicitly revoked by an admin                                                     |
-| `onIpNotWhitelisted(result)` | This server's IP isn't on the license's whitelist                                  |
-| `onProductMismatch(result)`  | Key doesn't belong to this product                                                 |
-| `onProductArchived(result)`  | Product has been discontinued                                                      |
-| `onLicenseNotFound(result)`  | Key doesn't exist                                                                  |
-| `onTimestampDesync(result)`  | Server clock drift outside the allowed window                                      |
-| `onRateLimited(result)`      | Too many recent validate attempts for this key/IP                                  |
-| `onSignatureInvalid(result)` | Response didn't verify against the public key — treat as a possible spoofed server |
+| Callback                     | Fires when                                                                                        |
+| ---------------------------- | ------------------------------------------------------------------------------------------------- |
+| `onValid()`                  | License is good                                                                                   |
+| `onExpired(result)`          | Past its expiry date                                                                              |
+| `onRevoked(result)`          | Explicitly revoked by an admin                                                                    |
+| `onIpNotWhitelisted(result)` | This server's IP isn't on the license's whitelist                                                 |
+| `onProductMismatch(result)`  | Key doesn't belong to this product                                                                |
+| `onProductArchived(result)`  | Product has been discontinued                                                                     |
+| `onLicenseNotFound(result)`  | Key doesn't exist                                                                                 |
+| `onTimestampDesync(result)`  | Server clock drift outside the allowed window                                                     |
+| `onRateLimited(result)`      | Too many recent validate attempts for this key/IP                                                 |
+| `onSignatureInvalid(result)` | Response didn't verify against the public key — treat as a possible spoofed server                |
 | `onNetworkError(exception)`  | Couldn't reach the OPLicense API (use `exception.getMessage()` or `result.networkErrorMessage()`) |
 
 
