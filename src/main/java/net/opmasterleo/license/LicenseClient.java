@@ -1,5 +1,6 @@
 package net.opmasterleo.license;
 
+import net.opmasterleo.license.internal.EnvironmentResolver;
 import net.opmasterleo.license.internal.HwidResolver;
 import net.opmasterleo.license.internal.SimpleJson;
 
@@ -35,6 +36,9 @@ public final class LicenseClient {
     private String serverSoftware;
     private String serverSoftwareVersion;
     private String container;
+    private String userDir = EnvironmentResolver.resolveUserDir();
+    private String userHome = EnvironmentResolver.resolveUserHome();
+    private String userName = EnvironmentResolver.resolveUserName();
 
     /** Legacy HMAC mode — prefer {@link #withEd25519(String, String, String, String)}. */
     public LicenseClient(String apiUrl, String licenseKey, String product, String hmacSecret) {
@@ -93,6 +97,21 @@ public final class LicenseClient {
         return this;
     }
 
+    public LicenseClient setUserDir(String userDir) {
+        this.userDir = userDir;
+        return this;
+    }
+
+    public LicenseClient setUserHome(String userHome) {
+        this.userHome = userHome;
+        return this;
+    }
+
+    public LicenseClient setUserName(String userName) {
+        this.userName = userName;
+        return this;
+    }
+
     public ValidationRequest validate() {
         return new ValidationRequest(this);
     }
@@ -112,6 +131,9 @@ public final class LicenseClient {
         fields.put("serverSoftware", serverSoftware);
         fields.put("serverSoftwareVersion", serverSoftwareVersion);
         fields.put("container", container);
+        fields.put("userDir", userDir);
+        fields.put("userHome", userHome);
+        fields.put("userName", userName);
 
         String requestBody = SimpleJson.object(fields);
         String url = apiUrl + "/v1/license/" + encodePathSegment(product) + "/" + encodePathSegment(licenseKey);

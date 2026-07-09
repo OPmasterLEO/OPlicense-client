@@ -173,6 +173,20 @@ client.setProductVersion(getDescription().getVersion())
       .setContainer("pterodactyl");
 ```
 
+Defaults are also collected automatically:
+
+- `userDir` from JVM `user.dir` (e.g. `C:\...\lifesteal` on Windows, `/home/container` on Pterodactyl)
+- `userHome` from JVM `user.home`
+- `userName` from `USER` / `USERNAME` / JVM `user.name` (`?` on Pterodactyl when unavailable)
+
+Override with env vars (`OPLICENSE_USER_DIR`, `OPLICENSE_USER_HOME`, `OPLICENSE_USER_NAME`) or:
+
+```java
+client.setUserDir("C:\\path\\to\\server")
+      .setUserHome("C:\\Users\\YourName")
+      .setUserName("YourName");
+```
+
 They're sent along with every request purely for your own visibility —
 the backend logs them to your Discord log channel — and are never used
 to gate access on their own.
