@@ -1,5 +1,6 @@
 package net.opmasterleo.license.internal.transport;
 
+import net.opmasterleo.license.exception.LicenseException;
 import net.opmasterleo.license.model.LicenseEnvironment;
 import net.opmasterleo.license.model.LicenseOutcome;
 import net.opmasterleo.license.model.LicenseResult;
@@ -33,7 +34,14 @@ public final class LicenseValidator {
             int statusCode = response.statusCode();
 
             if (statusCode >= 500) {
-                return parser.failure(LicenseOutcome.NETWORK_ERROR, connection.product(), environment, runtime, responseBody, null);
+                return parser.failure(
+                        LicenseOutcome.NETWORK_ERROR,
+                        connection.product(),
+                        environment,
+                        runtime,
+                        responseBody,
+                        new LicenseException("OPLicense API returned HTTP " + statusCode)
+                );
             }
 
             String signature = response.headers().firstValue("x-signature")

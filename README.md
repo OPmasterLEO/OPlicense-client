@@ -172,7 +172,7 @@ last-known-good result.
 | `onTimestampDesync(result)`  | Server clock drift outside the allowed window                                      |
 | `onRateLimited(result)`      | Too many recent validate attempts for this key/IP                                  |
 | `onSignatureInvalid(result)` | Response didn't verify against the public key — treat as a possible spoofed server |
-| `onNetworkError(exception)`  | Couldn't reach the backend at all                                                  |
+| `onNetworkError(exception)`  | Couldn't reach the OPLicense API (use `exception.getMessage()` or `result.networkErrorMessage()`) |
 
 
 Any callback you don't set is simply skipped — nothing runs. There's no

@@ -94,8 +94,9 @@ final class LicenseHttpTransport {
     }
 
     String buildRequestBody(Map<String, Object> fields, String nonce) {
-        fields.put("nonce", nonce);
-        return SimpleJson.object(fields);
+        Map<String, Object> payload = new LinkedHashMap<>(fields);
+        payload.put("nonce", nonce);
+        return SimpleJson.object(payload);
     }
 
     private static String encodePathSegment(String value) {

@@ -2,6 +2,7 @@ package net.opmasterleo.license.internal.transport;
 
 import net.opmasterleo.license.api.ResponseVerifier;
 import net.opmasterleo.license.internal.json.SimpleJson;
+import net.opmasterleo.license.exception.LicenseException;
 import net.opmasterleo.license.internal.runtime.LicenseRuntime;
 import net.opmasterleo.license.model.LicenseEnvironment;
 import net.opmasterleo.license.model.LicenseOutcome;
@@ -116,6 +117,13 @@ final class LicenseResponseParser {
             String rawBody,
             Exception networkError
     ) {
+        Exception resolvedError = networkError;
+        if (outcome == LicenseOutcome.NETWORK_ERROR && resolvedError == null) {
+            resolvedError = new LicenseException(
+                    "Could not reach the OPLicense API. The license server may be offline or unreachable."
+            );
+        }
+
         return LicenseResult.create(
                 outcome,
                 product,
@@ -128,7 +136,7 @@ final class LicenseResponseParser {
                 environment,
                 LicenseUpdate.of(runtime.productVersion(), null, false),
                 rawBody,
-                networkError
+                resolvedError
         );
     }
 

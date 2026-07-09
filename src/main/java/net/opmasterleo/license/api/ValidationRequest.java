@@ -182,7 +182,7 @@ public final class ValidationRequest {
                 if (onSignatureInvalid != null) onSignatureInvalid.accept(result);
                 break;
             case NETWORK_ERROR:
-                if (onNetworkError != null) onNetworkError.accept(result.networkError());
+                if (onNetworkError != null) onNetworkError.accept(result.networkErrorCause());
                 break;
         }
     }

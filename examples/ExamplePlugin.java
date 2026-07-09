@@ -90,7 +90,11 @@ public class ExamplePlugin extends JavaPlugin {
                     Bukkit.getPluginManager().disablePlugin(this);
                 })
                 .onNetworkError(exception -> {
-                    getLogger().severe("Network error validating license: " + exception.getMessage());
+                    String message = exception != null ? exception.getMessage() : null;
+                    if (message == null || message.isBlank()) {
+                        message = "Could not reach the OPLicense API. The license server may be offline or unreachable.";
+                    }
+                    getLogger().severe("Network error validating license: " + message);
                     Bukkit.getPluginManager().disablePlugin(this);
                 })
                 .run();

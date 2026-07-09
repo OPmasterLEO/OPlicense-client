@@ -1,5 +1,7 @@
 package net.opmasterleo.license.model;
 
+import net.opmasterleo.license.exception.LicenseException;
+
 public final class LicenseResult {
 
     private final LicenseOutcome outcome;
@@ -156,6 +158,36 @@ public final class LicenseResult {
         return networkError;
     }
 
+    /** Human-readable network failure text; never null for {@link LicenseOutcome#NETWORK_ERROR}. */
+    public String networkErrorMessage() {
+        if (networkError != null) {
+            String message = networkError.getMessage();
+            if (message != null && !message.isBlank()) {
+                return message;
+            }
+            return networkError.getClass().getSimpleName();
+        }
+        if (outcome == LicenseOutcome.NETWORK_ERROR) {
+            return defaultNetworkErrorMessage();
+        }
+        return "Unknown network error.";
+    }
+
+    /** Non-null exception for {@link LicenseOutcome#NETWORK_ERROR} callbacks. */
+    public Exception networkErrorCause() {
+        if (networkError != null) {
+            return networkError;
+        }
+        if (outcome == LicenseOutcome.NETWORK_ERROR) {
+            return new LicenseException(networkErrorMessage());
+        }
+        return null;
+    }
+
+    private static String defaultNetworkErrorMessage() {
+        return "Could not reach the OPLicense API. The license server may be offline or unreachable.";
+    }
+
     public String summary() {
         String statusPart = status == null ? "" : " Status: " + status + ".";
         String expiresPart = formatExpiresAt();
@@ -200,7 +232,7 @@ public final class LicenseResult {
                 return "License response could not be verified (signature mismatch). "
                         + "Confirm the Ed25519 public key from /product info is correct.";
             case NETWORK_ERROR:
-                return "Could not reach the license server.";
+                return networkErrorMessage();
             default:
                 return "License outcome: " + outcome;
         }

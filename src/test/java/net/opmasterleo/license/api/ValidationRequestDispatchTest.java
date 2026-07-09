@@ -68,6 +68,20 @@ class ValidationRequestDispatchTest {
         assertFalse(called.get());
     }
 
+    @Test
+    void dispatchProvidesMessageWhenNetworkErrorExceptionIsMissing() throws Exception {
+        ValidationRequest request = new ValidationRequest(null);
+        AtomicReference<String> captured = new AtomicReference<>();
+        request.onNetworkError(err -> captured.set(err != null ? err.getMessage() : null));
+
+        invokeDispatch(request, new LicenseResult(LicenseOutcome.NETWORK_ERROR, "prod", null, null, "{}", null));
+
+        assertEquals(
+                "Could not reach the OPLicense API. The license server may be offline or unreachable.",
+                captured.get()
+        );
+    }
+
     private static void invokeDispatch(ValidationRequest request, LicenseResult result) throws Exception {
         Method dispatch = ValidationRequest.class.getDeclaredMethod("dispatch", LicenseResult.class);
         dispatch.setAccessible(true);
