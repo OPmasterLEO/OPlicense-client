@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.opmasterleo:OPlicense-client:1.1.1")
+    implementation("com.github.opmasterleo:OPlicense-client:1.1.2")
 }
 ```
 
@@ -127,13 +127,10 @@ and fake license servers; it does not stop dedicated crackers.
 
 ## Obfuscation Compatibility
 
-`OPLicense Client` is designed to survive heavy plugin obfuscation, including
-ProGuard/R8 and Skidfuscator. Verifier internals now use explicit concrete
-classes (not synthetic lambda implementations) to reduce runtime linkage issues
-like `AbstractMethodError` / `NoSuchMethodError` at verifier call sites.
-
-For consumer keep rules, see `[PROGUARD.md](./PROGUARD.md)`. Keep exemptions
-minimal and focused on signature-critical classes only.
+`OPLicense Client` is designed to survive plugin obfuscation when the SDK package is
+exempted from flow/exception transformers. See `[PROGUARD.md](./PROGUARD.md)` for
+Skidfuscator, R8, and Zelix settings. Use OPlicense-client **1.1.2+** with the
+bundled `META-INF/oplicense/consumer-rules.pro`.
 
 ## Basic usage
 

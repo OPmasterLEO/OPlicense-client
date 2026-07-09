@@ -10,20 +10,39 @@ import java.util.Map;
 /** Mutable runtime metadata sent with validation requests. */
 public final class LicenseRuntime {
 
-    private String hwid = HwidResolver.resolveStable();
+    private String hwid;
     private String macAddress;
     private String productVersion;
-    private String operatingSystem = System.getProperty("os.name");
-    private String operatingSystemVersion = System.getProperty("os.version");
-    private String operatingSystemArchitecture = System.getProperty("os.arch");
-    private String javaVersion = System.getProperty("java.version");
+    private String operatingSystem;
+    private String operatingSystemVersion;
+    private String operatingSystemArchitecture;
+    private String javaVersion;
     private String serverSoftware;
     private String serverSoftwareVersion;
     private String container;
-    private String userDir = EnvironmentResolver.resolveUserDir();
-    private String userHome = EnvironmentResolver.resolveUserHome();
-    private String userName = EnvironmentResolver.resolveUserName();
+    private String userDir;
+    private String userHome;
+    private String userName;
     private String pterodactylNode;
+    private boolean initialized;
+
+    public LicenseRuntime() {
+    }
+
+    private void ensureInitialized() {
+        if (initialized) {
+            return;
+        }
+        initialized = true;
+        hwid = HwidResolver.resolveStable();
+        operatingSystem = System.getProperty("os.name");
+        operatingSystemVersion = System.getProperty("os.version");
+        operatingSystemArchitecture = System.getProperty("os.arch");
+        javaVersion = System.getProperty("java.version");
+        userDir = EnvironmentResolver.resolveUserDir();
+        userHome = EnvironmentResolver.resolveUserHome();
+        userName = EnvironmentResolver.resolveUserName();
+    }
 
     public LicenseRuntime setHwid(String hwid) {
         this.hwid = hwid;
@@ -31,6 +50,7 @@ public final class LicenseRuntime {
     }
 
     public LicenseRuntime useAutoHwid() {
+        ensureInitialized();
         this.hwid = HwidResolver.resolveStable();
         return this;
     }
@@ -81,10 +101,12 @@ public final class LicenseRuntime {
     }
 
     public LicenseEnvironment environment() {
+        ensureInitialized();
         return LicenseEnvironment.capture(userDir, userHome, userName, container, pterodactylNode);
     }
 
     public Map<String, Object> toRequestFields() {
+        ensureInitialized();
         LicenseEnvironment environment = environment();
         Map<String, Object> fields = new LinkedHashMap<>();
         fields.put("timestamp", System.currentTimeMillis() / 1000);
@@ -101,12 +123,20 @@ public final class LicenseRuntime {
         fields.put("userDir", environment.userDir());
         fields.put("userHome", environment.userHome());
         fields.put("userName", environment.userName());
-        if (environment.cpuModel() != null) fields.put("cpuModel", environment.cpuModel());
+        if (environment.cpuModel() != null) {
+            fields.put("cpuModel", environment.cpuModel());
+        }
         fields.put("cpuCores", environment.cpuCores());
         fields.put("threadCount", environment.threadCount());
-        if (environment.pterodactylNode() != null) fields.put("pterodactylNode", environment.pterodactylNode());
-        if (environment.pterodactylServerId() != null) fields.put("pterodactylServerId", environment.pterodactylServerId());
-        if (environment.pterodactylServerUuid() != null) fields.put("pterodactylServerUuid", environment.pterodactylServerUuid());
+        if (environment.pterodactylNode() != null) {
+            fields.put("pterodactylNode", environment.pterodactylNode());
+        }
+        if (environment.pterodactylServerId() != null) {
+            fields.put("pterodactylServerId", environment.pterodactylServerId());
+        }
+        if (environment.pterodactylServerUuid() != null) {
+            fields.put("pterodactylServerUuid", environment.pterodactylServerUuid());
+        }
         return fields;
     }
 }

@@ -1,6 +1,7 @@
 package net.opmasterleo.license.internal.transport;
 
 import net.opmasterleo.license.internal.json.SimpleJson;
+import net.opmasterleo.license.internal.platform.PlatformSupport;
 import net.opmasterleo.license.internal.runtime.LicenseRuntime;
 import net.opmasterleo.license.model.LicenseOutcome;
 
@@ -41,13 +42,10 @@ final class LicenseHttpTransport {
                 throw e;
             } catch (IOException e) {
                 lastIo = e;
-                if (attempt >= maxAttempts) break;
-                try {
-                    Thread.sleep(backoffBaseMs * attempt);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    throw ie;
+                if (attempt >= maxAttempts) {
+                    break;
                 }
+                PlatformSupport.sleep(backoffBaseMs * attempt);
             }
         }
 

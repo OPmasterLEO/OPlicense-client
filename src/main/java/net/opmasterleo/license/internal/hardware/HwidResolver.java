@@ -1,13 +1,11 @@
 package net.opmasterleo.license.internal.hardware;
 
+import net.opmasterleo.license.internal.platform.PlatformSupport;
+
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.List;
 
 public final class HwidResolver {
 
@@ -52,23 +50,23 @@ public final class HwidResolver {
         return fingerprint("LEGACY", legacy);
     }
 
-    private static List<String> envValues() {
-        List<String> values = new ArrayList<>();
-        for (String key : ENV_CANDIDATES) {
-            values.add(System.getenv(key));
+    private static String[] envValues() {
+        String[] values = new String[ENV_CANDIDATES.length];
+        for (int i = 0; i < ENV_CANDIDATES.length; i++) {
+            values[i] = System.getenv(ENV_CANDIDATES[i]);
         }
         return values;
     }
 
-    private static List<String> systemProperties() {
-        List<String> values = new ArrayList<>();
-        for (String key : SYSTEM_PROPERTY_CANDIDATES) {
-            values.add(System.getProperty(key));
+    private static String[] systemProperties() {
+        String[] values = new String[SYSTEM_PROPERTY_CANDIDATES.length];
+        for (int i = 0; i < SYSTEM_PROPERTY_CANDIDATES.length; i++) {
+            values[i] = System.getProperty(SYSTEM_PROPERTY_CANDIDATES[i]);
         }
         return values;
     }
 
-    private static String firstNonBlank(List<String> values) {
+    private static String firstNonBlank(String... values) {
         for (String value : values) {
             if (value != null && !value.trim().isEmpty()) {
                 return value.trim();
@@ -78,39 +76,31 @@ public final class HwidResolver {
     }
 
     private static String readMachineId() {
-        String[] candidates = {
-                "/etc/machine-id",
-                "/var/lib/dbus/machine-id"
-        };
-        for (String candidate : candidates) {
-            try {
-                if (Files.exists(Path.of(candidate))) {
-                    String value = Files.readString(Path.of(candidate), StandardCharsets.UTF_8).trim();
-                    if (!value.isEmpty()) return value;
-                }
-            } catch (Exception ignored) {
-            }
+        String machineId = PlatformSupport.readTextFile("/etc/machine-id");
+        if (machineId != null) {
+            return machineId;
         }
-        return null;
+        return PlatformSupport.readTextFile("/var/lib/dbus/machine-id");
     }
 
     private static String primaryMacAddress() {
-        try {
-            NetworkInterface ni = NetworkInterface.getByInetAddress(InetAddress.getLocalHost());
-            if (ni != null && ni.getHardwareAddress() != null) {
-                StringBuilder sb = new StringBuilder();
-                for (byte b : ni.getHardwareAddress()) {
-                    sb.append(String.format("%02X", b));
-                }
-                return sb.toString();
+        return PlatformSupport.call(() -> {
+            NetworkInterface networkInterface = NetworkInterface.getByInetAddress(InetAddress.getLocalHost());
+            if (networkInterface == null || networkInterface.getHardwareAddress() == null) {
+                return null;
             }
-        } catch (Exception ignored) {
-        }
-        return null;
+
+            byte[] hardwareAddress = networkInterface.getHardwareAddress();
+            StringBuilder builder = new StringBuilder();
+            for (byte value : hardwareAddress) {
+                builder.append(String.format("%02X", value));
+            }
+            return builder.toString();
+        });
     }
 
     private static String fingerprint(String source, String raw) {
-        try {
+        String hashed = PlatformSupport.call(() -> {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest((source + ":" + raw).getBytes(StandardCharsets.UTF_8));
             StringBuilder out = new StringBuilder("HWID-");
@@ -118,8 +108,10 @@ public final class HwidResolver {
                 out.append(String.format("%02X", hash[i]));
             }
             return out.toString();
-        } catch (Exception e) {
-            return "HWID-" + Integer.toHexString((source + ":" + raw).hashCode()).toUpperCase();
+        });
+        if (hashed != null) {
+            return hashed;
         }
+        return "HWID-" + Integer.toHexString((source + ":" + raw).hashCode()).toUpperCase();
     }
 }

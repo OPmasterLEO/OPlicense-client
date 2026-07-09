@@ -1,5 +1,7 @@
 package net.opmasterleo.license.internal.crypto;
 
+import net.opmasterleo.license.internal.platform.PlatformSupport;
+
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.PublicKey;
@@ -27,14 +29,13 @@ public final class Ed25519 {
         if (payload == null || signatureBase64 == null || publicKey == null) {
             return false;
         }
-        try {
+        Boolean verified = PlatformSupport.call(() -> {
             Signature signature = Signature.getInstance("Ed25519");
             signature.initVerify(publicKey);
             signature.update(payload.getBytes(StandardCharsets.UTF_8));
             return signature.verify(Base64.getDecoder().decode(signatureBase64.trim()));
-        } catch (Exception e) {
-            return false;
-        }
+        }, Boolean.FALSE);
+        return Boolean.TRUE.equals(verified);
     }
 
     private static String normalizePublicKey(String value) {
