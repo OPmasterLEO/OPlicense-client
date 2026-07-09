@@ -25,27 +25,32 @@ final class LicenseResponseParser {
         String product = connection.product();
 
         if (!verifier.verify(responseBody, signature, algorithm)) {
-            return failure(LicenseOutcome.SIGNATURE_INVALID, product, environment, runtime, responseBody, null);
+            return reportableFailure(
+                    connection, runtime, LicenseOutcome.SIGNATURE_INVALID, product, environment, responseBody, null);
         }
 
         Map<String, String> parsed = SimpleJson.parseFlat(responseBody);
         if (!requestNonce.equals(parsed.get("requestNonce"))) {
-            return failure(LicenseOutcome.RESPONSE_INVALID, product, environment, runtime, responseBody, null);
+            return reportableFailure(
+                    connection, runtime, LicenseOutcome.RESPONSE_INVALID, product, environment, responseBody, null);
         }
 
         Long issuedAt = parseLongOrNull(parsed.get("issuedAt"));
         if (issuedAt == null) {
-            return failure(LicenseOutcome.RESPONSE_INVALID, product, environment, runtime, responseBody, null);
+            return reportableFailure(
+                    connection, runtime, LicenseOutcome.RESPONSE_INVALID, product, environment, responseBody, null);
         }
 
         long now = System.currentTimeMillis() / 1000;
         if (Math.abs(now - issuedAt) > 120) {
-            return failure(LicenseOutcome.RESPONSE_INVALID, product, environment, runtime, responseBody, null);
+            return reportableFailure(
+                    connection, runtime, LicenseOutcome.RESPONSE_INVALID, product, environment, responseBody, null);
         }
 
         String responseProduct = parsed.get("product");
         if (responseProduct != null && !responseProduct.equals(product)) {
-            return failure(LicenseOutcome.RESPONSE_INVALID, product, environment, runtime, responseBody, null);
+            return reportableFailure(
+                    connection, runtime, LicenseOutcome.RESPONSE_INVALID, product, environment, responseBody, null);
         }
 
         boolean valid = "true".equals(parsed.get("valid"));
@@ -85,6 +90,19 @@ final class LicenseResponseParser {
                 responseBody,
                 null
         );
+    }
+
+    private LicenseResult reportableFailure(
+            LicenseConnection connection,
+            LicenseRuntime runtime,
+            LicenseOutcome outcome,
+            String product,
+            LicenseEnvironment environment,
+            String rawBody,
+            Exception networkError
+    ) {
+        new LicenseHttpTransport().reportClientOutcome(connection, runtime, outcome);
+        return failure(outcome, product, environment, runtime, rawBody, networkError);
     }
 
     LicenseResult failure(

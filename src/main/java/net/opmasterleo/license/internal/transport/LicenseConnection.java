@@ -17,11 +17,22 @@ public final class LicenseConnection {
         if (apiUrl == null || licenseKey == null || product == null || verifier == null) {
             throw new IllegalArgumentException("apiUrl, licenseKey, product, and verifier are all required");
         }
-        this.apiUrl = apiUrl;
+        this.apiUrl = normalizeApiUrl(apiUrl);
         this.licenseKey = licenseKey;
         this.product = product;
         this.verifier = verifier;
         this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+    }
+
+    private static String normalizeApiUrl(String apiUrl) {
+        String trimmed = apiUrl.trim();
+        while (trimmed.endsWith("/")) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException("apiUrl must not be empty");
+        }
+        return trimmed;
     }
 
     String apiUrl() {
