@@ -47,12 +47,10 @@ The API URL and signing material are **not** meant to be configurable by
 whoever runs the server. Both belong in your plugin's private source (ideally
 concealed — see below). Only the license key itself belongs in `config.yml`.
 
-### Recommended: Ed25519 (public key only)
+### Ed25519 (public key only)
 
-With `RESPONSE_SIGNING_MODE=ed25519` on the backend, the plugin embeds a
-**public key** from `/product info`. Even if someone decompiles your JAR they
-**cannot forge** valid license responses — unlike HMAC, where the extracted
-secret lets them run a fake license server.
+Embed the **public key** from `/product info`. Even if someone decompiles your JAR they
+**cannot forge** valid license responses.
 
 ```java
 LicenseClient client = LicenseClient.withEd25519(
@@ -63,35 +61,16 @@ LicenseClient client = LicenseClient.withEd25519(
 );
 ```
 
-
-
-### Legacy: HMAC (symmetric secret — extractable)
-
-HMAC mode still works but is weaker: anyone who extracts the secret from your
-JAR can sign fake `valid: true` responses. Prefer Ed25519 for new products.
-
-```java
-LicenseClient client = new LicenseClient(
-    "https://your-api.example",
-    getConfig().getString("license-key"),
-    "your-product-slug",
-    "your-products-hmac-secret"
-);
-```
-
-
-
 ## Hiding strings from casual decompilation
 
 ProGuard and similar tools **rename classes** but usually leave string literals
-readable (`LICENSE_HMAC = "673a..."` stays visible). To raise the bar:
+readable (`ED25519_PUBLIC_KEY = "MCow..."` stays visible). To raise the bar:
 
-1. Switch to **Ed25519** so extracted material is not a forging key.
-2. Use `Concealed.decode(int[], seed)` instead of `static final String`.
-3. Run `examples/ConcealSecrets.java` at build time to generate the `int[]` arrays.
-4. For stronger protection, use a commercial obfuscator with **string encryption**
+1. Use `Concealed.decode(int[], seed)` instead of `static final String`.
+2. Run `examples/ConcealSecrets.java` at build time to generate the `int[]` arrays.
+3. For stronger protection, use a commercial obfuscator with **string encryption**
   (Zelix, Stringer, Allatori) or a small **native (JNI)** verifier.
-5. Use **HTTPS** — plain `http://` lets anyone on the network MITM your API.
+4. Use **HTTPS** — plain `http://` lets anyone on the network MITM your API.
 
 ```java
 private static final int SEED = 0x1A2B3C4D;
@@ -152,7 +131,7 @@ last-known-good result.
 | `onLicenseNotFound(result)`  | Key doesn't exist                                                              |
 | `onTimestampDesync(result)`  | Server clock drift outside the allowed window                                  |
 | `onRateLimited(result)`      | Too many recent validate attempts for this key/IP                              |
-| `onSignatureInvalid(result)` | Response didn't verify against the secret — treat as a possible spoofed server |
+| `onSignatureInvalid(result)` | Response didn't verify against the public key — treat as a possible spoofed server |
 | `onNetworkError(exception)`  | Couldn't reach the backend at all                                              |
 
 
@@ -213,13 +192,10 @@ client.setHwid("your-stable-server-id");
 
 ## Advanced: why signed responses matter
 
-Every response from the backend is signed, and `LicenseClient` verifies it
+Every response from the backend is Ed25519-signed, and `LicenseClient` verifies it
 before trusting the payload. A forged host cannot produce a valid signature
-without the signing key.
+without the product's private key (which never ships in plugins).
 
-Ed25519 mode is strongly recommended because plugins embed only a **public key**.
-Even if the jar is decompiled, attackers cannot mint valid signatures.
-HMAC mode remains for compatibility but is weaker because the shared secret ships
-inside the plugin.
+Plugins embed only a **public key**. Even if the jar is decompiled, attackers cannot mint valid signatures.
 
 See `examples/ExamplePlugin.java` for a complete, wired-up example.

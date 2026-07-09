@@ -22,7 +22,6 @@ allowing broad shrinking/obfuscation elsewhere.
 
 # Keep cryptography internals referenced by verifier implementations.
 -keep class net.opmasterleo.license.internal.Ed25519 { public *; }
--keep class net.opmasterleo.license.internal.Hmac { public *; }
 ```
 
 ## Skidfuscator Guidance

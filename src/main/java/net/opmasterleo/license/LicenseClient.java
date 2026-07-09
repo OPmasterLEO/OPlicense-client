@@ -40,11 +40,6 @@ public final class LicenseClient {
     private String userHome = EnvironmentResolver.resolveUserHome();
     private String userName = EnvironmentResolver.resolveUserName();
 
-    /** Legacy HMAC mode — prefer {@link #withEd25519(String, String, String, String)}. */
-    public LicenseClient(String apiUrl, String licenseKey, String product, String hmacSecret) {
-        this(apiUrl, licenseKey, product, ResponseVerifier.hmac(hmacSecret));
-    }
-
     public LicenseClient(String apiUrl, String licenseKey, String product, ResponseVerifier verifier) {
         if (apiUrl == null || licenseKey == null || product == null || verifier == null) {
             throw new LicenseException("apiUrl, licenseKey, product, and verifier are all required");

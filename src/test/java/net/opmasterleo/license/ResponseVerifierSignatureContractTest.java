@@ -24,13 +24,7 @@ class ResponseVerifierSignatureContractTest {
     }
 
     @Test
-    void concreteVerifierImplementationsExposeSameSignature() throws Exception {
-        Method hmacVerify = ResponseVerifier.HmacResponseVerifier.class.getMethod(
-                "verify",
-                String.class,
-                String.class,
-                String.class
-        );
+    void concreteVerifierImplementationExposesSameSignature() throws Exception {
         Method edVerify = ResponseVerifier.Ed25519ResponseVerifier.class.getMethod(
                 "verify",
                 String.class,
@@ -38,7 +32,6 @@ class ResponseVerifierSignatureContractTest {
                 String.class
         );
 
-        assertEquals(boolean.class, hmacVerify.getReturnType());
         assertEquals(boolean.class, edVerify.getReturnType());
     }
 }

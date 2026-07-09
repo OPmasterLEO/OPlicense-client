@@ -11,11 +11,11 @@ public class ExamplePlugin extends JavaPlugin {
         saveDefaultConfig();
         String key = getConfig().getString("license-key");
 
-        LicenseClient client = new LicenseClient(
+        LicenseClient client = LicenseClient.withEd25519(
                 "http://YOUR-VPS-IP:3000",
                 key,
                 "example-product",
-                "YOUR-PRODUCT-HMAC-SECRET"
+                "YOUR-PRODUCT-ED25519-PUBLIC-KEY-SPKI-BASE64"
         );
 
         client.setProductVersion(getDescription().getVersion())
