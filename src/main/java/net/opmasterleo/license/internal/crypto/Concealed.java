@@ -1,9 +1,5 @@
-package net.opmasterleo.license.internal;
+package net.opmasterleo.license.internal.crypto;
 
-/**
- * Runtime string concealment. Not unbreakable — only raises the bar over plain literals.
- * Generate arrays with {@link #encode(String, int)} during development, then delete call sites.
- */
 public final class Concealed {
 
     private Concealed() {

@@ -7,21 +7,30 @@ allowing broad shrinking/obfuscation elsewhere.
 ```proguard
 # Keep OPlicense public API used by plugin code and callback wiring.
 -keep class net.opmasterleo.license.LicenseClient { public *; }
--keep class net.opmasterleo.license.ValidationRequest { public *; }
--keep class net.opmasterleo.license.LicenseResult { public *; }
--keep class net.opmasterleo.license.LicenseOutcome { public *; }
--keep class net.opmasterleo.license.LicenseException { public *; }
+-keep class net.opmasterleo.license.api.ValidationRequest { public *; }
+-keep class net.opmasterleo.license.model.LicenseResult { public *; }
+-keep class net.opmasterleo.license.model.LicenseUpdate { public *; }
+-keep class net.opmasterleo.license.model.LicenseEnvironment { public *; }
+-keep class net.opmasterleo.license.model.LicenseOutcome { public *; }
+-keep class net.opmasterleo.license.exception.LicenseException { public *; }
+
+# Internal transport/runtime layers used by LicenseClient.
+-keep class net.opmasterleo.license.internal.transport.LicenseValidator { *; }
+-keep class net.opmasterleo.license.internal.transport.LicenseResponseParser { *; }
+-keep class net.opmasterleo.license.internal.transport.LicenseHttpTransport { *; }
+-keep class net.opmasterleo.license.internal.transport.LicenseConnection { *; }
+-keep class net.opmasterleo.license.internal.runtime.LicenseRuntime { *; }
 
 # Signature-critical verifier contract.
--keep interface net.opmasterleo.license.ResponseVerifier {
+-keep interface net.opmasterleo.license.api.ResponseVerifier {
     public boolean verify(java.lang.String, java.lang.String, java.lang.String);
 }
--keep class net.opmasterleo.license.ResponseVerifier$* {
+-keep class net.opmasterleo.license.api.ResponseVerifier$* {
     public boolean verify(java.lang.String, java.lang.String, java.lang.String);
 }
 
 # Keep cryptography internals referenced by verifier implementations.
--keep class net.opmasterleo.license.internal.Ed25519 { public *; }
+-keep class net.opmasterleo.license.internal.crypto.Ed25519 { public *; }
 ```
 
 ## Skidfuscator Guidance
@@ -29,9 +38,9 @@ allowing broad shrinking/obfuscation elsewhere.
 Skidfuscator can aggressively transform control flow and interface call sites.
 If you encounter runtime linkage errors, minimally exempt:
 
-- `net.opmasterleo.license.ResponseVerifier`
-- `net.opmasterleo.license.ResponseVerifier$*`
-- `net.opmasterleo.license.ValidationRequest`
+- `net.opmasterleo.license.api.ResponseVerifier`
+- `net.opmasterleo.license.api.ResponseVerifier$*`
+- `net.opmasterleo.license.api.ValidationRequest`
 
 Do **not** disable obfuscation for your entire plugin; keep the exemption scope
 tight to these signature-critical classes.

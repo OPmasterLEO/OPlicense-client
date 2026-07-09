@@ -37,9 +37,43 @@ Maven:
 </dependency>
 ```
 
-The actual Java code lives under `net.opmasterleo.license` — that's what
-you import and reference in your own plugin regardless of the JitPack
-coordinates above.
+## Package layout
+
+```
+net.opmasterleo.license/
+  LicenseClient.java              # entry point — the only class most plugins import directly
+
+net.opmasterleo.license.api/
+  ValidationRequest.java          # fluent callback builder returned by validate()
+  ResponseVerifier.java           # Ed25519 verifier interface
+
+net.opmasterleo.license.model/
+  LicenseResult.java              # validation outcome + metadata
+  LicenseOutcome.java             # outcome enum
+  LicenseUpdate.java              # plugin version updater info
+  LicenseEnvironment.java         # captured server environment snapshot
+
+net.opmasterleo.license.exception/
+  LicenseException.java
+
+net.opmasterleo.license.internal/
+  transport/                      # HTTP, connection, validator, response parser
+  runtime/                        # mutable request metadata
+  environment/                    # user dir, CPU, Pterodactyl detection
+  hardware/                       # stable HWID resolution
+  crypto/                         # Ed25519 + Concealed string helper
+  json/                           # minimal JSON encode/decode
+```
+
+Typical imports:
+
+```java
+import net.opmasterleo.license.LicenseClient;
+import net.opmasterleo.license.model.LicenseResult;
+import net.opmasterleo.license.model.LicenseEnvironment;
+```
+
+`ValidationRequest` is returned from `client.validate()` — you usually don't need to import it unless you store it in a variable.
 
 ## What must never go in a user-editable config file
 
@@ -151,6 +185,28 @@ client.setProductVersion(getDescription().getVersion())
       .setServerSoftware(Bukkit.getName(), Bukkit.getVersion())
       .setContainer("pterodactyl");
 ```
+
+### Plugin updater message
+
+Set your plugin version before validate. The backend tracks every reported version per product and returns the highest observed version as latest:
+
+```java
+client.setProductVersion(getDescription().getVersion())
+      .validate()
+      .onValid(result -> {
+          if (result.update().updateAvailable()) {
+              getLogger().warning(result.update().message());
+          }
+      })
+      .run();
+```
+
+`result.update()` exposes:
+
+- `currentVersion()` — version you sent
+- `latestVersion()` — highest version seen across licensed servers
+- `updateAvailable()` — `true` when current is behind latest
+- `message()` — ready-to-print updater text
 
 Defaults are also collected automatically:
 

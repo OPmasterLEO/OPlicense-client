@@ -1,5 +1,8 @@
-package net.opmasterleo.license;
+package net.opmasterleo.license.api;
 
+import net.opmasterleo.license.exception.LicenseException;
+import net.opmasterleo.license.model.LicenseOutcome;
+import net.opmasterleo.license.model.LicenseResult;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;

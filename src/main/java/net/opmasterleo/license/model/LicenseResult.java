@@ -1,4 +1,4 @@
-package net.opmasterleo.license;
+package net.opmasterleo.license.model;
 
 public final class LicenseResult {
 
@@ -10,14 +10,15 @@ public final class LicenseResult {
     private final String serverId;
     private final String[] whitelistedIps;
     private final LicenseEnvironment environment;
+    private final LicenseUpdate update;
     private final String rawBody;
     private final Exception networkError;
 
-    LicenseResult(LicenseOutcome outcome, String product, String status, String expiresAt, String rawBody, Exception networkError) {
-        this(outcome, product, status, expiresAt, null, null, null, null, rawBody, networkError);
+    public LicenseResult(LicenseOutcome outcome, String product, String status, String expiresAt, String rawBody, Exception networkError) {
+        this(outcome, product, status, expiresAt, null, null, null, null, null, rawBody, networkError);
     }
 
-    LicenseResult(
+    public LicenseResult(
             LicenseOutcome outcome,
             String product,
             String status,
@@ -28,10 +29,10 @@ public final class LicenseResult {
             String rawBody,
             Exception networkError
     ) {
-        this(outcome, product, status, expiresAt, ownerDiscordId, serverId, whitelistedIps, null, rawBody, networkError);
+        this(outcome, product, status, expiresAt, ownerDiscordId, serverId, whitelistedIps, null, null, rawBody, networkError);
     }
 
-    LicenseResult(
+    public LicenseResult(
             LicenseOutcome outcome,
             String product,
             String status,
@@ -43,6 +44,22 @@ public final class LicenseResult {
             String rawBody,
             Exception networkError
     ) {
+        this(outcome, product, status, expiresAt, ownerDiscordId, serverId, whitelistedIps, environment, null, rawBody, networkError);
+    }
+
+    public LicenseResult(
+            LicenseOutcome outcome,
+            String product,
+            String status,
+            String expiresAt,
+            String ownerDiscordId,
+            String serverId,
+            String[] whitelistedIps,
+            LicenseEnvironment environment,
+            LicenseUpdate update,
+            String rawBody,
+            Exception networkError
+    ) {
         this.outcome = outcome;
         this.product = product;
         this.status = status;
@@ -51,8 +68,37 @@ public final class LicenseResult {
         this.serverId = serverId;
         this.whitelistedIps = whitelistedIps == null ? new String[0] : whitelistedIps.clone();
         this.environment = environment;
+        this.update = update == null ? LicenseUpdate.of(null, null, false) : update;
         this.rawBody = rawBody;
         this.networkError = networkError;
+    }
+
+    public static LicenseResult create(
+            LicenseOutcome outcome,
+            String product,
+            String status,
+            String expiresAt,
+            String ownerDiscordId,
+            String serverId,
+            String[] whitelistedIps,
+            LicenseEnvironment environment,
+            LicenseUpdate update,
+            String rawBody,
+            Exception networkError
+    ) {
+        return new LicenseResult(
+                outcome,
+                product,
+                status,
+                expiresAt,
+                ownerDiscordId,
+                serverId,
+                whitelistedIps,
+                environment,
+                update,
+                rawBody,
+                networkError
+        );
     }
 
     public LicenseOutcome outcome() {
@@ -87,6 +133,10 @@ public final class LicenseResult {
         return environment;
     }
 
+    public LicenseUpdate update() {
+        return update;
+    }
+
     public String rawBody() {
         return rawBody;
     }
@@ -98,10 +148,11 @@ public final class LicenseResult {
     public String summary() {
         String statusPart = status == null ? "" : " Status: " + status + ".";
         String expiresPart = formatExpiresAt();
+        String updatePart = update.updateAvailable() ? " " + update.message() : "";
 
         switch (outcome) {
             case VALID:
-                return "License valid." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
+                return "License valid." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart + updatePart;
             case EXPIRED:
                 return "License expired." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
             case REVOKED:

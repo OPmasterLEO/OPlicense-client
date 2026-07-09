@@ -1,4 +1,4 @@
-package net.opmasterleo.license.internal;
+package net.opmasterleo.license.internal.hardware;
 
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -13,8 +13,8 @@ public final class HwidResolver {
 
     private static final String[] ENV_CANDIDATES = {
             "OPLICENSE_HWID",
-            "P_SERVER_UUID",            // Pterodactyl
-            "P_SERVER_ID",              // Pterodactyl numeric id
+            "P_SERVER_UUID",
+            "P_SERVER_ID",
             "SERVER_UUID",
             "PTERODACTYL_SERVER_UUID",
             "HOSTNAME"

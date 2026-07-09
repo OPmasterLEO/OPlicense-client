@@ -1,4 +1,4 @@
-package net.opmasterleo.license.internal;
+package net.opmasterleo.license.internal.crypto;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;

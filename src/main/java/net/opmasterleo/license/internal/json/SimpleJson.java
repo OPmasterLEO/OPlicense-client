@@ -1,4 +1,4 @@
-package net.opmasterleo.license.internal;
+package net.opmasterleo.license.internal.json;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

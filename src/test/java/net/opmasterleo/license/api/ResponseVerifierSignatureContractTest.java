@@ -1,4 +1,4 @@
-package net.opmasterleo.license;
+package net.opmasterleo.license.api;
 
 import org.junit.jupiter.api.Test;
 

@@ -1,4 +1,4 @@
-package net.opmasterleo.license.internal;
+package net.opmasterleo.license.internal.environment;
 
 import java.lang.management.ManagementFactory;
 import java.nio.file.Files;

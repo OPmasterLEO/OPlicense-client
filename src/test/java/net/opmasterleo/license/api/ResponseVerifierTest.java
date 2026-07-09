@@ -1,5 +1,6 @@
-package net.opmasterleo.license;
+package net.opmasterleo.license.api;
 
+import net.opmasterleo.license.api.ResponseVerifier;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;

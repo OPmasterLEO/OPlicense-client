@@ -1,4 +1,4 @@
-package net.opmasterleo.license;
+package net.opmasterleo.license.exception;
 
 public class LicenseException extends RuntimeException {
 

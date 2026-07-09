@@ -1,13 +1,9 @@
-package net.opmasterleo.license;
+package net.opmasterleo.license.api;
 
-import net.opmasterleo.license.internal.Ed25519;
+import net.opmasterleo.license.internal.crypto.Ed25519;
 
 import java.security.PublicKey;
 
-/**
- * Verifies Ed25519-signed API responses. Plugins embed only the public key from
- * {@code /product info} — a leaked client cannot forge valid responses.
- */
 public interface ResponseVerifier {
 
     boolean verify(String payload, String signature, String algorithmHeader);

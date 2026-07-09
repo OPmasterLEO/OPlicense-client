@@ -24,6 +24,9 @@ public class ExamplePlugin extends JavaPlugin {
         client.validate()
                 .onValid(result -> {
                     getLogger().info(result.summary());
+                    if (result.update().updateAvailable()) {
+                        getLogger().warning(result.update().message());
+                    }
                     loadPlugin();
                 })
                 .onExpired(result -> {

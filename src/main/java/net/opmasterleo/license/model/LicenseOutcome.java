@@ -1,4 +1,4 @@
-package net.opmasterleo.license;
+package net.opmasterleo.license.model;
 
 public enum LicenseOutcome {
     VALID,

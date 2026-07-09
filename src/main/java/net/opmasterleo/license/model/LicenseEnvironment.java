@@ -1,6 +1,6 @@
-package net.opmasterleo.license;
+package net.opmasterleo.license.model;
 
-import net.opmasterleo.license.internal.EnvironmentResolver;
+import net.opmasterleo.license.internal.environment.EnvironmentResolver;
 
 public final class LicenseEnvironment {
 
@@ -14,7 +14,7 @@ public final class LicenseEnvironment {
     private final String pterodactylServerId;
     private final String pterodactylServerUuid;
 
-    LicenseEnvironment(
+    public LicenseEnvironment(
             String userDir,
             String userHome,
             String userName,
@@ -36,7 +36,7 @@ public final class LicenseEnvironment {
         this.pterodactylServerUuid = pterodactylServerUuid;
     }
 
-    static LicenseEnvironment capture(
+    public static LicenseEnvironment capture(
             String userDir,
             String userHome,
             String userName,

@@ -1,6 +1,6 @@
 package net.opmasterleo.license.examples;
 
-import net.opmasterleo.license.internal.Concealed;
+import net.opmasterleo.license.internal.crypto.Concealed;
 
 /**
  * Dev helper: run main() to print concealed int[] literals for plugin source.

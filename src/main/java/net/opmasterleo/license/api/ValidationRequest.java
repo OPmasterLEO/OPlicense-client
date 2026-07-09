@@ -1,4 +1,8 @@
-package net.opmasterleo.license;
+package net.opmasterleo.license.api;
+
+import net.opmasterleo.license.LicenseClient;
+import net.opmasterleo.license.model.LicenseOutcome;
+import net.opmasterleo.license.model.LicenseResult;
 
 import java.util.function.Consumer;
 
@@ -25,7 +29,7 @@ public final class ValidationRequest {
     private Consumer<LicenseResult> onSignatureInvalid;
     private Consumer<Exception> onNetworkError;
 
-    ValidationRequest(LicenseClient client) {
+    public ValidationRequest(LicenseClient client) {
         this.client = client;
     }
 
