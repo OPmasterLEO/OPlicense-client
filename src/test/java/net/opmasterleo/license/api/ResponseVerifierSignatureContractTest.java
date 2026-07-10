@@ -1,5 +1,6 @@
 package net.opmasterleo.license.api;
 
+import net.opmasterleo.license.internal.crypto.Ed25519ResponseVerifier;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
@@ -25,7 +26,7 @@ class ResponseVerifierSignatureContractTest {
 
     @Test
     void concreteVerifierImplementationExposesSameSignature() throws Exception {
-        Method edVerify = ResponseVerifier.Ed25519ResponseVerifier.class.getMethod(
+        Method edVerify = Ed25519ResponseVerifier.class.getMethod(
                 "verify",
                 String.class,
                 String.class,

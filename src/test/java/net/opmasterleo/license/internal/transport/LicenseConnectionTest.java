@@ -1,6 +1,6 @@
 package net.opmasterleo.license.internal.transport;
 
-import net.opmasterleo.license.api.ResponseVerifier;
+import net.opmasterleo.license.api.ResponseVerifiers;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
@@ -19,7 +19,7 @@ class LicenseConnectionTest {
                 "https://license.mastersmp.net///",
                 "key",
                 "product",
-                ResponseVerifier.ed25519(generateEd25519Spki())
+                ResponseVerifiers.ed25519(generateEd25519Spki())
         );
 
         assertEquals("https://license.mastersmp.net", readApiUrl(connection));
@@ -31,7 +31,7 @@ class LicenseConnectionTest {
                 "   ///   ",
                 "key",
                 "product",
-                ResponseVerifier.ed25519(generateEd25519Spki())
+                ResponseVerifiers.ed25519(generateEd25519Spki())
         ));
     }
 

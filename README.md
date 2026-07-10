@@ -1,12 +1,10 @@
 # OPLicense Client
 
-Java client SDK for validating licenses against a self-hosted
-[OPLicense backend](../oplicense-backend) instance. No external
-dependencies — uses `java.net.http.HttpClient` (Java 11+) and
-`javax.crypto` from the standard library only, so there's nothing to
+Java client SDK for validating licenses against a self-hosted  
+[OPLicense backend](../oplicense-backend) instance. No external  
+dependencies — uses `java.net.http.HttpClient` (Java 11+) and  
+`javax.crypto` from the standard library only, so there's nothing to  
 shade or relocate.
-
-## Adding the dependency
 
 Gradle (`build.gradle.kts`):
 
@@ -16,7 +14,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.opmasterleo:OPlicense-client:1.1.2")
+    implementation("com.github.opmasterleo:OPlicense-client:1.1.3")
 }
 ```
 
@@ -33,7 +31,7 @@ Maven:
 <dependency>
     <groupId>com.github.opmasterleo</groupId>
     <artifactId>OPlicense-client</artifactId>
-    <version>1.1.2</version>
+    <version>1.1.3</version>
 </dependency>
 ```
 
@@ -48,6 +46,7 @@ net.opmasterleo.license/
 net.opmasterleo.license.api/
   ValidationRequest.java          # fluent callback builder returned by validate()
   ResponseVerifier.java           # Ed25519 verifier interface
+  ResponseVerifiers.java          # concrete factory (obfuscation-safe)
 
 net.opmasterleo.license.model/
   LicenseResult.java              # validation outcome + metadata
@@ -98,39 +97,6 @@ LicenseClient client = LicenseClient.withEd25519(
 ```
 
 
-
-## Hiding strings from casual decompilation
-
-ProGuard and similar tools **rename classes** but usually leave string literals
-readable (`ED25519_PUBLIC_KEY = "MCow..."` stays visible). To raise the bar:
-
-1. Use `Concealed.decode(int[], seed)` instead of `static final String`.
-2. Run `examples/ConcealSecrets.java` at build time to generate the `int[]` arrays.
-3. For stronger protection, use a commercial obfuscator with **string encryption**
-  (Zelix, Stringer, Allatori) or a small **native (JNI)** verifier.
-4. Use **HTTPS** — plain `http://` lets anyone on the network MITM your API.
-
-```java
-private static final int SEED = 0x1A2B3C4D;
-
-LicenseClient.withEd25519(
-    Concealed.decode(new int[] { /* ... */ }, SEED),
-    getConfig().getString("license-key"),
-    Concealed.decode(new int[] { /* ... */ }, SEED),
-    Concealed.decode(new int[] { /* ... */ }, SEED)
-);
-```
-
-**Reality check:** no client-side check is unbreakable. A determined attacker can
-patch `verify()` to always return true. Ed25519 + obfuscation stops casual piracy
-and fake license servers; it does not stop dedicated crackers.
-
-## Obfuscation Compatibility
-
-`OPLicense Client` is designed to survive plugin obfuscation when the SDK package is
-exempted from flow/exception transformers. See `[PROGUARD.md](./PROGUARD.md)` for
-Skidfuscator, R8, and Zelix settings. Use OPlicense-client **1.1.2+** with the
-bundled `META-INF/oplicense/consumer-rules.pro`.
 
 ## Basic usage
 

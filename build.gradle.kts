@@ -4,7 +4,7 @@ plugins {
 }
 
 group = (findProperty("group") as String?)?.takeIf { it.isNotBlank() } ?: "net.opmasterleo"
-version = (findProperty("version") as String?)?.takeIf { it.isNotBlank() } ?: "1.1.2"
+version = (findProperty("version") as String?)?.takeIf { it.isNotBlank() } ?: "1.1.3"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
