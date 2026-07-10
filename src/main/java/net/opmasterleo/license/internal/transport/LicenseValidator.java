@@ -1,12 +1,11 @@
 package net.opmasterleo.license.internal.transport;
 
 import net.opmasterleo.license.exception.LicenseException;
+import net.opmasterleo.license.internal.runtime.LicenseRuntime;
 import net.opmasterleo.license.model.LicenseEnvironment;
 import net.opmasterleo.license.model.LicenseOutcome;
 import net.opmasterleo.license.model.LicenseResult;
-import net.opmasterleo.license.internal.runtime.LicenseRuntime;
 
-import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Map;
@@ -27,43 +26,45 @@ public final class LicenseValidator {
         Map<String, Object> fields = runtime.toRequestFields();
         String requestBody = transport.buildRequestBody(fields, requestNonce);
 
-        try {
-            LicenseHttpResponse response = transport.post(connection, requestBody);
-            String responseBody = response.body();
-            int statusCode = response.statusCode();
-
-            if (statusCode >= 500) {
-                return parser.failure(
-                        LicenseOutcome.NETWORK_ERROR,
-                        connection.product(),
-                        environment,
-                        runtime,
-                        responseBody,
-                        new LicenseException("OPLicense API returned HTTP " + statusCode)
-                );
-            }
-
-            String signature = response.signature();
-            if (signature != null) {
-                signature = signature.trim();
-            }
-            String algorithm = response.signatureAlgorithm();
-
-            return parser.parseVerifiedResponse(
-                    connection,
-                    runtime,
+        LicenseHttpResponse response = transport.post(connection, requestBody);
+        if (response.networkFailure()) {
+            return parser.failure(
+                    LicenseOutcome.NETWORK_ERROR,
+                    connection.product(),
                     environment,
-                    requestNonce,
-                    responseBody,
-                    signature,
-                    algorithm
+                    runtime,
+                    null,
+                    new LicenseException(response.errorMessage())
             );
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return parser.failure(LicenseOutcome.NETWORK_ERROR, connection.product(), environment, runtime, null, e);
-        } catch (IOException e) {
-            return parser.failure(LicenseOutcome.NETWORK_ERROR, connection.product(), environment, runtime, null, e);
         }
+
+        String responseBody = response.body();
+        int statusCode = response.statusCode();
+        if (statusCode >= 500) {
+            return parser.failure(
+                    LicenseOutcome.NETWORK_ERROR,
+                    connection.product(),
+                    environment,
+                    runtime,
+                    responseBody,
+                    new LicenseException("OPLicense API returned HTTP " + statusCode)
+            );
+        }
+
+        String signature = response.signature();
+        if (signature != null) {
+            signature = signature.trim();
+        }
+
+        return parser.parseVerifiedResponse(
+                connection,
+                runtime,
+                environment,
+                requestNonce,
+                responseBody,
+                signature,
+                response.signatureAlgorithm()
+        );
     }
 
     private static String randomNonce() {

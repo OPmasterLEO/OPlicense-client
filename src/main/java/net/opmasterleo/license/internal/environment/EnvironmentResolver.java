@@ -164,16 +164,17 @@ public final class EnvironmentResolver {
             return null;
         }
 
-        try {
-            long quota = Long.parseLong(parts[0]);
-            long period = Long.parseLong(parts[1]);
-            if (quota <= 0 || period <= 0) {
-                return null;
-            }
-            return (double) quota / period;
-        } catch (Exception ignored) {
+        Long quotaValue = PlatformSupport.parseLongOrNull(parts[0]);
+        Long periodValue = PlatformSupport.parseLongOrNull(parts[1]);
+        if (quotaValue == null || periodValue == null) {
             return null;
         }
+        long quota = quotaValue.longValue();
+        long period = periodValue.longValue();
+        if (quota <= 0 || period <= 0) {
+            return null;
+        }
+        return (double) quota / period;
     }
 
     private static Double readCgroupV1CpuLimit() {
@@ -198,22 +199,18 @@ public final class EnvironmentResolver {
     }
 
     private static Double readCgroupV1Pair(String quotaPath, String periodPath) {
-        try {
-            if (!Files.exists(Path.of(quotaPath)) || !Files.exists(Path.of(periodPath))) {
-                return null;
-            }
-            long quota = Long.parseLong(PlatformSupport.readTextFile(quotaPath));
-            if (quota <= 0) {
-                return null;
-            }
-            long period = Long.parseLong(PlatformSupport.readTextFile(periodPath));
-            if (period <= 0) {
-                return null;
-            }
-            return (double) quota / period;
-        } catch (Exception ignored) {
+        if (!Files.exists(Path.of(quotaPath)) || !Files.exists(Path.of(periodPath))) {
             return null;
         }
+        Long quotaValue = PlatformSupport.parseLongOrNull(PlatformSupport.readTextFile(quotaPath));
+        if (quotaValue == null || quotaValue.longValue() <= 0) {
+            return null;
+        }
+        Long periodValue = PlatformSupport.parseLongOrNull(PlatformSupport.readTextFile(periodPath));
+        if (periodValue == null || periodValue.longValue() <= 0) {
+            return null;
+        }
+        return (double) quotaValue.longValue() / (double) periodValue.longValue();
     }
 
     private static String readLinuxCpuModel() {
@@ -262,23 +259,24 @@ public final class EnvironmentResolver {
                 return null;
             }
             if (process.exitValue() != 0) {
+                process.destroy();
                 return null;
             }
 
             InputStream input = process.getInputStream();
             byte[] bytes = input.readAllBytes();
             input.close();
+            process.destroy();
             String output = new String(bytes, StandardCharsets.UTF_8).trim();
             if (output.isEmpty()) {
                 return null;
             }
             return output;
         } catch (Exception ignored) {
-            return null;
-        } finally {
             if (process != null) {
                 process.destroy();
             }
+            return null;
         }
     }
 

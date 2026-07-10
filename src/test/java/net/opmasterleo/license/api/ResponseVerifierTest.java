@@ -25,7 +25,7 @@ class ResponseVerifierTest {
         String signature = Base64.getEncoder().encodeToString(signer.sign());
 
         String publicSpki = Base64.getEncoder().encodeToString(pair.getPublic().getEncoded());
-        Ed25519ResponseVerifier verifier = ResponseVerifiers.createEd25519(publicSpki);
+        Ed25519ResponseVerifier verifier = Ed25519ResponseVerifier.createEd25519(publicSpki);
 
         assertTrue(verifier.verify(payload, signature, "ed25519"));
     }
@@ -42,7 +42,7 @@ class ResponseVerifierTest {
         String signature = Base64.getEncoder().encodeToString(signer.sign());
 
         String publicSpki = Base64.getEncoder().encodeToString(pair.getPublic().getEncoded());
-        Ed25519ResponseVerifier verifier = ResponseVerifiers.createEd25519(publicSpki);
+        Ed25519ResponseVerifier verifier = Ed25519ResponseVerifier.createEd25519(publicSpki);
 
         assertTrue(verifier.verify(payload, signature, null));
     }
@@ -52,7 +52,7 @@ class ResponseVerifierTest {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("Ed25519");
         KeyPair pair = generator.generateKeyPair();
         String publicSpki = Base64.getEncoder().encodeToString(pair.getPublic().getEncoded());
-        Ed25519ResponseVerifier verifier = ResponseVerifiers.createEd25519(publicSpki);
+        Ed25519ResponseVerifier verifier = Ed25519ResponseVerifier.createEd25519(publicSpki);
 
         assertFalse(verifier.verify("{\"valid\":true}", "invalid", "hmac"));
     }

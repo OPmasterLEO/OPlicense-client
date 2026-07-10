@@ -16,7 +16,7 @@ class ResponseVerifierSignatureContractTest {
         KeyPair pair = generator.generateKeyPair();
         String publicSpki = Base64.getEncoder().encodeToString(pair.getPublic().getEncoded());
 
-        Ed25519ResponseVerifier verifier = ResponseVerifiers.createEd25519(publicSpki);
+        Ed25519ResponseVerifier verifier = Ed25519ResponseVerifier.createEd25519(publicSpki);
         assertFalse(verifier.verify("{\"valid\":false}", "invalid", "ed25519"));
     }
 }

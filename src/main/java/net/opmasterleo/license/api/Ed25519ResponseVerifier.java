@@ -12,6 +12,10 @@ public final class Ed25519ResponseVerifier {
         this.publicKey = publicKey;
     }
 
+    public static Ed25519ResponseVerifier createEd25519(String spkiBase64) {
+        return new Ed25519ResponseVerifier(spkiBase64);
+    }
+
     public Ed25519ResponseVerifier(String spkiBase64) {
         this(Ed25519.decodePublicKey(spkiBase64));
     }

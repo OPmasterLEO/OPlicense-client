@@ -13,7 +13,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.opmasterleo:OPlicense-client:1.1.3")
+    implementation("com.github.opmasterleo:OPlicense-client:1.1.4")
 }
 ```
 
@@ -30,9 +30,11 @@ Maven:
 <dependency>
     <groupId>com.github.opmasterleo</groupId>
     <artifactId>OPlicense-client</artifactId>
-    <version>1.1.3</version>
+    <version>1.1.4</version>
 </dependency>
 ```
+
+
 
 ## Package layout
 
@@ -43,8 +45,7 @@ net.opmasterleo.license/
 net.opmasterleo.license.api/
   ValidationRequest.java          # run(ValidationCallbacks) — single dispatch entry
   ValidationCallbacks.java        # abstract class; override outcomes you care about
-  Ed25519ResponseVerifier.java    # concrete signature verifier (no interface)
-  ResponseVerifiers.java          # createEd25519(spkiBase64) factory
+  Ed25519ResponseVerifier.java    # concrete verifier + createEd25519(spkiBase64)
 
 net.opmasterleo.license.model/
   LicenseResult.java              # validation outcome + metadata
@@ -93,6 +94,8 @@ LicenseClient client = LicenseClient.withEd25519(
     "MCowBQYDK2VwAyEA..."                // SPKI base64 from /product info DM
 );
 ```
+
+
 
 ## Basic usage
 
@@ -161,6 +164,8 @@ client.setProductVersion(getDescription().getVersion())
       .setServerSoftware(Bukkit.getName(), Bukkit.getVersion())
       .setContainer("pterodactyl");
 ```
+
+
 
 ### Plugin updater message
 

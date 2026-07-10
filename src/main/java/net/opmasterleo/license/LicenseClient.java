@@ -1,7 +1,6 @@
 package net.opmasterleo.license;
 
 import net.opmasterleo.license.api.Ed25519ResponseVerifier;
-import net.opmasterleo.license.api.ResponseVerifiers;
 import net.opmasterleo.license.api.ValidationRequest;
 import net.opmasterleo.license.internal.runtime.LicenseRuntime;
 import net.opmasterleo.license.internal.transport.LicenseConnection;
@@ -27,7 +26,7 @@ public final class LicenseClient {
             String product,
             String ed25519PublicKeySpkiBase64
     ) {
-        return new LicenseClient(apiUrl, licenseKey, product, ResponseVerifiers.createEd25519(ed25519PublicKeySpkiBase64));
+        return new LicenseClient(apiUrl, licenseKey, product, Ed25519ResponseVerifier.createEd25519(ed25519PublicKeySpkiBase64));
     }
 
     public LicenseClient setHwid(String hwid) {

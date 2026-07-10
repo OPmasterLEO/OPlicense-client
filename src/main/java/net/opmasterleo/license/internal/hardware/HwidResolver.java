@@ -50,6 +50,10 @@ public final class HwidResolver {
         return fingerprint("LEGACY", legacy);
     }
 
+    public static String resolvePrimaryMac() {
+        return primaryMacAddress();
+    }
+
     private static String[] envValues() {
         String[] values = new String[ENV_CANDIDATES.length];
         for (int i = 0; i < ENV_CANDIDATES.length; i++) {
@@ -67,7 +71,8 @@ public final class HwidResolver {
     }
 
     private static String firstNonBlank(String... values) {
-        for (String value : values) {
+        for (int i = 0; i < values.length; i++) {
+            String value = values[i];
             if (value != null && !value.trim().isEmpty()) {
                 return value.trim();
             }
@@ -96,8 +101,13 @@ public final class HwidResolver {
                 StringBuilder builder = new StringBuilder();
                 for (int i = 0; i < hardwareAddress.length; i++) {
                     builder.append(String.format("%02X", hardwareAddress[i]));
+                    if (i + 1 < hardwareAddress.length) {
+                        builder.append(':');
+                    }
                 }
-                return builder.toString();
+                if (builder.length() > 0) {
+                    return builder.toString();
+                }
             }
         } catch (Exception ignored) {
         }
@@ -109,10 +119,7 @@ public final class HwidResolver {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest((source + ":" + raw).getBytes(StandardCharsets.UTF_8));
             StringBuilder out = new StringBuilder("HWID-");
-            for (int i = 0; i < hash.length; i++) {
-                if (i >= 12) {
-                    break;
-                }
+            for (int i = 0; i < hash.length && i < 12; i++) {
                 out.append(String.format("%02X", hash[i]));
             }
             return out.toString();

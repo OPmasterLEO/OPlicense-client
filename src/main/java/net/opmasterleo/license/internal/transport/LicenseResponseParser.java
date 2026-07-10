@@ -3,6 +3,7 @@ package net.opmasterleo.license.internal.transport;
 import net.opmasterleo.license.api.Ed25519ResponseVerifier;
 import net.opmasterleo.license.internal.json.SimpleJson;
 import net.opmasterleo.license.exception.LicenseException;
+import net.opmasterleo.license.internal.platform.PlatformSupport;
 import net.opmasterleo.license.internal.runtime.LicenseRuntime;
 import net.opmasterleo.license.model.LicenseEnvironment;
 import net.opmasterleo.license.model.LicenseOutcome;
@@ -36,7 +37,7 @@ final class LicenseResponseParser {
                     connection, runtime, LicenseOutcome.RESPONSE_INVALID, product, environment, responseBody, null);
         }
 
-        Long issuedAt = parseLongOrNull(parsed.get("issuedAt"));
+        Long issuedAt = PlatformSupport.parseLongOrNull(parsed.get("issuedAt"));
         if (issuedAt == null) {
             return reportableFailure(
                     connection, runtime, LicenseOutcome.RESPONSE_INVALID, product, environment, responseBody, null);
@@ -189,32 +190,5 @@ final class LicenseResponseParser {
             default:
                 return LicenseOutcome.NETWORK_ERROR;
         }
-    }
-
-    private static Long parseLongOrNull(String value) {
-        if (value == null || value.isEmpty()) {
-            return null;
-        }
-
-        int index = 0;
-        boolean negative = false;
-        if (value.charAt(0) == '-') {
-            negative = true;
-            index = 1;
-        }
-        if (index >= value.length()) {
-            return null;
-        }
-
-        long result = 0;
-        for (int i = index; i < value.length(); i++) {
-            char digit = value.charAt(i);
-            if (digit < '0' || digit > '9') {
-                return null;
-            }
-            result = (result * 10L) + (digit - '0');
-        }
-
-        return negative ? -result : result;
     }
 }
