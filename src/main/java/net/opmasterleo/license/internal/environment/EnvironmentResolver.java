@@ -164,14 +164,16 @@ public final class EnvironmentResolver {
             return null;
         }
 
-        return PlatformSupport.call(() -> {
+        try {
             long quota = Long.parseLong(parts[0]);
             long period = Long.parseLong(parts[1]);
             if (quota <= 0 || period <= 0) {
                 return null;
             }
             return (double) quota / period;
-        });
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     private static Double readCgroupV1CpuLimit() {
@@ -196,7 +198,7 @@ public final class EnvironmentResolver {
     }
 
     private static Double readCgroupV1Pair(String quotaPath, String periodPath) {
-        return PlatformSupport.call(() -> {
+        try {
             if (!Files.exists(Path.of(quotaPath)) || !Files.exists(Path.of(periodPath))) {
                 return null;
             }
@@ -209,16 +211,20 @@ public final class EnvironmentResolver {
                 return null;
             }
             return (double) quota / period;
-        });
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     private static String readLinuxCpuModel() {
-        return PlatformSupport.call(() -> {
+        try {
             Path path = Path.of("/proc/cpuinfo");
             if (!Files.exists(path)) {
                 return null;
             }
-            for (String line : Files.readAllLines(path)) {
+            List<String> lines = Files.readAllLines(path);
+            for (int i = 0; i < lines.size(); i++) {
+                String line = lines.get(i);
                 String lower = line.toLowerCase();
                 if (lower.startsWith("model name") || lower.startsWith("hardware")) {
                     int idx = line.indexOf(':');
@@ -231,7 +237,9 @@ public final class EnvironmentResolver {
                 }
             }
             return null;
-        });
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     private static String readWindowsCpuModel() {
@@ -240,8 +248,9 @@ public final class EnvironmentResolver {
             return null;
         }
 
-        return PlatformSupport.call(() -> {
-            Process process = new ProcessBuilder(
+        Process process = null;
+        try {
+            process = new ProcessBuilder(
                     "powershell",
                     "-NoProfile",
                     "-Command",
@@ -260,8 +269,17 @@ public final class EnvironmentResolver {
             byte[] bytes = input.readAllBytes();
             input.close();
             String output = new String(bytes, StandardCharsets.UTF_8).trim();
-            return output.isEmpty() ? null : output;
-        });
+            if (output.isEmpty()) {
+                return null;
+            }
+            return output;
+        } catch (Exception ignored) {
+            return null;
+        } finally {
+            if (process != null) {
+                process.destroy();
+            }
+        }
     }
 
     private static String[] envValues(String[] keys) {

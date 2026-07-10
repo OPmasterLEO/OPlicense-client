@@ -7,7 +7,6 @@ import net.opmasterleo.license.model.LicenseResult;
 import net.opmasterleo.license.internal.runtime.LicenseRuntime;
 
 import java.io.IOException;
-import java.net.http.HttpResponse;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Map;
@@ -29,7 +28,7 @@ public final class LicenseValidator {
         String requestBody = transport.buildRequestBody(fields, requestNonce);
 
         try {
-            HttpResponse<String> response = transport.post(connection, requestBody);
+            LicenseHttpResponse response = transport.post(connection, requestBody);
             String responseBody = response.body();
             int statusCode = response.statusCode();
 
@@ -44,14 +43,11 @@ public final class LicenseValidator {
                 );
             }
 
-            String signature = response.headers().firstValue("x-signature")
-                    .or(() -> response.headers().firstValue("X-Signature"))
-                    .orElse(null);
-            if (signature != null) signature = signature.trim();
-
-            String algorithm = response.headers().firstValue("x-signature-alg")
-                    .or(() -> response.headers().firstValue("X-Signature-Alg"))
-                    .orElse(null);
+            String signature = response.signature();
+            if (signature != null) {
+                signature = signature.trim();
+            }
+            String algorithm = response.signatureAlgorithm();
 
             return parser.parseVerifiedResponse(
                     connection,

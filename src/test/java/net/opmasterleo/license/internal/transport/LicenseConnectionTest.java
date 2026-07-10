@@ -3,7 +3,6 @@ package net.opmasterleo.license.internal.transport;
 import net.opmasterleo.license.api.ResponseVerifiers;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Method;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.util.Base64;
@@ -19,10 +18,10 @@ class LicenseConnectionTest {
                 "https://license.mastersmp.net///",
                 "key",
                 "product",
-                ResponseVerifiers.ed25519(generateEd25519Spki())
+                ResponseVerifiers.createEd25519(generateEd25519Spki())
         );
 
-        assertEquals("https://license.mastersmp.net", readApiUrl(connection));
+        assertEquals("https://license.mastersmp.net", connection.apiUrl());
     }
 
     @Test
@@ -31,14 +30,8 @@ class LicenseConnectionTest {
                 "   ///   ",
                 "key",
                 "product",
-                ResponseVerifiers.ed25519(generateEd25519Spki())
+                ResponseVerifiers.createEd25519(generateEd25519Spki())
         ));
-    }
-
-    private static String readApiUrl(LicenseConnection connection) throws Exception {
-        Method method = LicenseConnection.class.getDeclaredMethod("apiUrl");
-        method.setAccessible(true);
-        return (String) method.invoke(connection);
     }
 
     private static String generateEd25519Spki() throws Exception {

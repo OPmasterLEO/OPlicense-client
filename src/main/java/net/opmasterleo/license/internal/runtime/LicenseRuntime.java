@@ -2,6 +2,7 @@ package net.opmasterleo.license.internal.runtime;
 
 import net.opmasterleo.license.internal.environment.EnvironmentResolver;
 import net.opmasterleo.license.internal.hardware.HwidResolver;
+import net.opmasterleo.license.internal.hardware.MacAddressResolver;
 import net.opmasterleo.license.model.LicenseEnvironment;
 
 import java.util.LinkedHashMap;
@@ -35,6 +36,7 @@ public final class LicenseRuntime {
         }
         initialized = true;
         hwid = HwidResolver.resolveStable();
+        macAddress = MacAddressResolver.resolvePrimary();
         operatingSystem = System.getProperty("os.name");
         operatingSystemVersion = System.getProperty("os.version");
         operatingSystemArchitecture = System.getProperty("os.arch");

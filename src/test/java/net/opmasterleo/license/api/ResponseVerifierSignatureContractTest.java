@@ -1,38 +1,22 @@
 package net.opmasterleo.license.api;
 
-import net.opmasterleo.license.internal.crypto.Ed25519ResponseVerifier;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.util.Base64;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class ResponseVerifierSignatureContractTest {
 
     @Test
-    void verifyMethodHasStableThreeStringSignature() throws Exception {
-        Method verify = ResponseVerifier.class.getMethod(
-                "verify",
-                String.class,
-                String.class,
-                String.class
-        );
+    void verifyMethodAcceptsThreeStringArguments() throws Exception {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("Ed25519");
+        KeyPair pair = generator.generateKeyPair();
+        String publicSpki = Base64.getEncoder().encodeToString(pair.getPublic().getEncoded());
 
-        assertEquals(boolean.class, verify.getReturnType());
-        assertTrue(Modifier.isAbstract(verify.getModifiers()));
-    }
-
-    @Test
-    void concreteVerifierImplementationExposesSameSignature() throws Exception {
-        Method edVerify = Ed25519ResponseVerifier.class.getMethod(
-                "verify",
-                String.class,
-                String.class,
-                String.class
-        );
-
-        assertEquals(boolean.class, edVerify.getReturnType());
+        Ed25519ResponseVerifier verifier = ResponseVerifiers.createEd25519(publicSpki);
+        assertFalse(verifier.verify("{\"valid\":false}", "invalid", "ed25519"));
     }
 }

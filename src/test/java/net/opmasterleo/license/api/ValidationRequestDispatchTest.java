@@ -5,7 +5,6 @@ import net.opmasterleo.license.model.LicenseOutcome;
 import net.opmasterleo.license.model.LicenseResult;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -16,75 +15,94 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ValidationRequestDispatchTest {
 
     @Test
-    void dispatchInvokesValidCallback() throws Exception {
+    void dispatchInvokesValidCallback() {
         ValidationRequest request = new ValidationRequest(null);
         AtomicBoolean called = new AtomicBoolean(false);
-        request.onValid(() -> called.set(true));
+        ValidationCallbacks callbacks = new ValidationCallbacks() {
+            @Override
+            public void onValid(LicenseResult result) {
+                called.set(true);
+            }
+        };
 
-        invokeDispatch(request, new LicenseResult(LicenseOutcome.VALID, "prod", "ACTIVE", null, "{}", null));
+        request.dispatch(new LicenseResult(LicenseOutcome.VALID, "prod", "ACTIVE", null, "{}", null), callbacks);
 
         assertTrue(called.get());
     }
 
     @Test
-    void dispatchRoutesSignatureLikeFailuresToOnSignatureInvalid() throws Exception {
+    void dispatchRoutesSignatureLikeFailuresToOnSignatureInvalid() {
         ValidationRequest request = new ValidationRequest(null);
         AtomicReference<LicenseOutcome> captured = new AtomicReference<>();
-        request.onSignatureInvalid(result -> captured.set(result.outcome()));
+        ValidationCallbacks callbacks = new ValidationCallbacks() {
+            @Override
+            public void onSignatureInvalid(LicenseResult result) {
+                captured.set(result.outcome());
+            }
+        };
 
-        invokeDispatch(request, new LicenseResult(LicenseOutcome.NONCE_INVALID, "prod", null, null, "{}", null));
+        request.dispatch(new LicenseResult(LicenseOutcome.NONCE_INVALID, "prod", null, null, "{}", null), callbacks);
         assertEquals(LicenseOutcome.NONCE_INVALID, captured.get());
 
-        invokeDispatch(request, new LicenseResult(LicenseOutcome.RESPONSE_INVALID, "prod", null, null, "{}", null));
+        request.dispatch(new LicenseResult(LicenseOutcome.RESPONSE_INVALID, "prod", null, null, "{}", null), callbacks);
         assertEquals(LicenseOutcome.RESPONSE_INVALID, captured.get());
     }
 
     @Test
-    void dispatchInvokesNetworkErrorCallback() throws Exception {
+    void dispatchInvokesNetworkErrorCallback() {
         ValidationRequest request = new ValidationRequest(null);
         AtomicBoolean called = new AtomicBoolean(false);
-        request.onNetworkError(err -> called.set(true));
+        ValidationCallbacks callbacks = new ValidationCallbacks() {
+            @Override
+            public void onNetworkError(Exception error) {
+                called.set(true);
+            }
+        };
 
-        invokeDispatch(request, new LicenseResult(
+        request.dispatch(new LicenseResult(
                 LicenseOutcome.NETWORK_ERROR,
                 "prod",
                 null,
                 null,
                 null,
                 new LicenseException("network down")
-        ));
+        ), callbacks);
 
         assertTrue(called.get());
     }
 
     @Test
-    void dispatchDoesNothingWithoutRegisteredCallback() throws Exception {
+    void dispatchDoesNothingWithoutRegisteredCallback() {
         ValidationRequest request = new ValidationRequest(null);
         AtomicBoolean called = new AtomicBoolean(false);
-        request.onRateLimited(result -> called.set(true));
+        ValidationCallbacks callbacks = new ValidationCallbacks() {
+            @Override
+            public void onRateLimited(LicenseResult result) {
+                called.set(true);
+            }
+        };
 
-        invokeDispatch(request, new LicenseResult(LicenseOutcome.EXPIRED, "prod", "EXPIRED", null, "{}", null));
+        request.dispatch(new LicenseResult(LicenseOutcome.EXPIRED, "prod", "EXPIRED", null, "{}", null), callbacks);
 
         assertFalse(called.get());
     }
 
     @Test
-    void dispatchProvidesMessageWhenNetworkErrorExceptionIsMissing() throws Exception {
+    void dispatchProvidesMessageWhenNetworkErrorExceptionIsMissing() {
         ValidationRequest request = new ValidationRequest(null);
         AtomicReference<String> captured = new AtomicReference<>();
-        request.onNetworkError(err -> captured.set(err != null ? err.getMessage() : null));
+        ValidationCallbacks callbacks = new ValidationCallbacks() {
+            @Override
+            public void onNetworkError(Exception error) {
+                captured.set(error != null ? error.getMessage() : null);
+            }
+        };
 
-        invokeDispatch(request, new LicenseResult(LicenseOutcome.NETWORK_ERROR, "prod", null, null, "{}", null));
+        request.dispatch(new LicenseResult(LicenseOutcome.NETWORK_ERROR, "prod", null, null, "{}", null), callbacks);
 
         assertEquals(
                 "Could not reach the OPLicense API. The license server may be offline or unreachable.",
                 captured.get()
         );
-    }
-
-    private static void invokeDispatch(ValidationRequest request, LicenseResult result) throws Exception {
-        Method dispatch = ValidationRequest.class.getDeclaredMethod("dispatch", LicenseResult.class);
-        dispatch.setAccessible(true);
-        dispatch.invoke(request, result);
     }
 }

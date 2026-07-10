@@ -2,10 +2,10 @@ package net.opmasterleo.license.internal.hardware;
 
 import net.opmasterleo.license.internal.platform.PlatformSupport;
 
-import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.Enumeration;
 
 public final class HwidResolver {
 
@@ -84,34 +84,40 @@ public final class HwidResolver {
     }
 
     private static String primaryMacAddress() {
-        return PlatformSupport.call(() -> {
-            NetworkInterface networkInterface = NetworkInterface.getByInetAddress(InetAddress.getLocalHost());
-            if (networkInterface == null || networkInterface.getHardwareAddress() == null) {
-                return null;
-            }
+        try {
+            Enumeration<NetworkInterface> networks = NetworkInterface.getNetworkInterfaces();
+            while (networks.hasMoreElements()) {
+                NetworkInterface network = networks.nextElement();
+                byte[] hardwareAddress = network.getHardwareAddress();
+                if (hardwareAddress == null) {
+                    continue;
+                }
 
-            byte[] hardwareAddress = networkInterface.getHardwareAddress();
-            StringBuilder builder = new StringBuilder();
-            for (byte value : hardwareAddress) {
-                builder.append(String.format("%02X", value));
+                StringBuilder builder = new StringBuilder();
+                for (int i = 0; i < hardwareAddress.length; i++) {
+                    builder.append(String.format("%02X", hardwareAddress[i]));
+                }
+                return builder.toString();
             }
-            return builder.toString();
-        });
+        } catch (Exception ignored) {
+        }
+        return null;
     }
 
     private static String fingerprint(String source, String raw) {
-        String hashed = PlatformSupport.call(() -> {
+        try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest((source + ":" + raw).getBytes(StandardCharsets.UTF_8));
             StringBuilder out = new StringBuilder("HWID-");
-            for (int i = 0; i < 12 && i < hash.length; i++) {
+            for (int i = 0; i < hash.length; i++) {
+                if (i >= 12) {
+                    break;
+                }
                 out.append(String.format("%02X", hash[i]));
             }
             return out.toString();
-        });
-        if (hashed != null) {
-            return hashed;
+        } catch (Exception ignored) {
+            return "HWID-" + Integer.toHexString((source + ":" + raw).hashCode()).toUpperCase();
         }
-        return "HWID-" + Integer.toHexString((source + ":" + raw).hashCode()).toUpperCase();
     }
 }

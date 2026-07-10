@@ -1,19 +1,15 @@
 package net.opmasterleo.license.internal.transport;
 
-import net.opmasterleo.license.api.ResponseVerifier;
-
-import java.net.http.HttpClient;
-import java.time.Duration;
+import net.opmasterleo.license.api.Ed25519ResponseVerifier;
 
 public final class LicenseConnection {
 
     private final String apiUrl;
     private final String licenseKey;
     private final String product;
-    private final ResponseVerifier verifier;
-    private final HttpClient httpClient;
+    private final Ed25519ResponseVerifier verifier;
 
-    public LicenseConnection(String apiUrl, String licenseKey, String product, ResponseVerifier verifier) {
+    public LicenseConnection(String apiUrl, String licenseKey, String product, Ed25519ResponseVerifier verifier) {
         if (apiUrl == null || licenseKey == null || product == null || verifier == null) {
             throw new IllegalArgumentException("apiUrl, licenseKey, product, and verifier are all required");
         }
@@ -21,7 +17,6 @@ public final class LicenseConnection {
         this.licenseKey = licenseKey;
         this.product = product;
         this.verifier = verifier;
-        this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
     }
 
     private static String normalizeApiUrl(String apiUrl) {
@@ -47,11 +42,7 @@ public final class LicenseConnection {
         return product;
     }
 
-    ResponseVerifier verifier() {
+    Ed25519ResponseVerifier verifier() {
         return verifier;
-    }
-
-    HttpClient httpClient() {
-        return httpClient;
     }
 }

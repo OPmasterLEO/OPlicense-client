@@ -2,9 +2,8 @@
 
 Java client SDK for validating licenses against a self-hosted  
 [OPLicense backend](../oplicense-backend) instance. No external  
-dependencies — uses `java.net.http.HttpClient` (Java 11+) and  
-`javax.crypto` from the standard library only, so there's nothing to  
-shade or relocate.
+dependencies — uses `HttpURLConnection` and `javax.crypto` from the  
+standard library only, so there's nothing to shade or relocate.
 
 Gradle (`build.gradle.kts`):
 
@@ -35,8 +34,6 @@ Maven:
 </dependency>
 ```
 
-
-
 ## Package layout
 
 ```
@@ -44,9 +41,10 @@ net.opmasterleo.license/
   LicenseClient.java              # entry point — the only class most plugins import directly
 
 net.opmasterleo.license.api/
-  ValidationRequest.java          # fluent callback builder returned by validate()
-  ResponseVerifier.java           # Ed25519 verifier interface
-  ResponseVerifiers.java          # concrete factory (obfuscation-safe)
+  ValidationRequest.java          # run(ValidationCallbacks) — single dispatch entry
+  ValidationCallbacks.java        # abstract class; override outcomes you care about
+  Ed25519ResponseVerifier.java    # concrete signature verifier (no interface)
+  ResponseVerifiers.java          # createEd25519(spkiBase64) factory
 
 net.opmasterleo.license.model/
   LicenseResult.java              # validation outcome + metadata
@@ -96,23 +94,32 @@ LicenseClient client = LicenseClient.withEd25519(
 );
 ```
 
-
-
 ## Basic usage
 
 Validate once at the top of `onEnable` with OPLicense before anything else runs:
 
 ```java
-client.validate()
-    .onValid(() -> {
+client.validate().run(new ValidationCallbacks() {
+    @Override
+    public void onValid(LicenseResult result) {
         // load config, register listeners, everything else goes here
-    })
-    .onExpired(result -> Bukkit.getPluginManager().disablePlugin(this))
-    .onRevoked(result -> Bukkit.getPluginManager().disablePlugin(this))
-    .onIpNotWhitelisted(result -> Bukkit.getPluginManager().disablePlugin(this))
-    .onNetworkError(exception -> Bukkit.getPluginManager().disablePlugin(this))
-    .run();
+    }
+
+    @Override
+    public void onExpired(LicenseResult result) {
+        Bukkit.getPluginManager().disablePlugin(this);
+    }
+
+    @Override
+    public void onNetworkError(Exception exception) {
+        Bukkit.getPluginManager().disablePlugin(this);
+    }
+});
 ```
+
+Subclass `ValidationCallbacks` and override only the outcomes you need.
+The SDK dispatches with `invokevirtual` on your concrete class — no
+functional interfaces, no fluent chains, no `invokedynamic` in the SDK itself.
 
 Call this once, at the very top of `onEnable`, before anything else runs.
 There's no polling loop — this is a single check per server boot. If the
@@ -125,7 +132,7 @@ last-known-good result.
 
 | Callback                     | Fires when                                                                                        |
 | ---------------------------- | ------------------------------------------------------------------------------------------------- |
-| `onValid()`                  | License is good                                                                                   |
+| `onValid(result)`            | License is good                                                                                   |
 | `onExpired(result)`          | Past its expiry date                                                                              |
 | `onRevoked(result)`          | Explicitly revoked by an admin                                                                    |
 | `onIpNotWhitelisted(result)` | This server's IP isn't on the license's whitelist                                                 |
@@ -155,21 +162,21 @@ client.setProductVersion(getDescription().getVersion())
       .setContainer("pterodactyl");
 ```
 
-
-
 ### Plugin updater message
 
 Set your plugin version before validate. The backend tracks every reported version per product and returns the highest observed version as latest:
 
 ```java
-client.setProductVersion(getDescription().getVersion())
-      .validate()
-      .onValid(result -> {
-          if (result.update().updateAvailable()) {
-              getLogger().warning(result.update().message());
-          }
-      })
-      .run();
+client.setProductVersion(getDescription().getVersion());
+
+client.validate().run(new ValidationCallbacks() {
+    @Override
+    public void onValid(LicenseResult result) {
+        if (result.update().updateAvailable()) {
+            getLogger().warning(result.update().message());
+        }
+    }
+});
 ```
 
 `result.update()` exposes:
@@ -236,14 +243,3 @@ If you want full control, still call:
 client.setHwid("your-stable-server-id");
 ```
 
-
-
-## Advanced: why signed responses matter
-
-Every response from the OPLicense backend is Ed25519-signed, and `LicenseClient` verifies it
-before trusting the payload. A forged host cannot produce a valid signature
-without the product's private key (which never ships in plugins).
-
-Plugins embed only a **public key**. Even if the jar is decompiled, attackers cannot mint valid signatures.
-
-See `examples/ExamplePlugin.java` for a complete, wired-up example.

@@ -1,10 +1,10 @@
-package net.opmasterleo.license.internal.crypto;
+package net.opmasterleo.license.api;
 
-import net.opmasterleo.license.api.ResponseVerifier;
+import net.opmasterleo.license.internal.crypto.Ed25519;
 
 import java.security.PublicKey;
 
-public final class Ed25519ResponseVerifier implements ResponseVerifier {
+public final class Ed25519ResponseVerifier {
 
     private final PublicKey publicKey;
 
@@ -16,7 +16,6 @@ public final class Ed25519ResponseVerifier implements ResponseVerifier {
         this(Ed25519.decodePublicKey(spkiBase64));
     }
 
-    @Override
     public boolean verify(String payload, String signature, String algorithmHeader) {
         String algorithm = algorithmHeader;
         if (algorithm == null || algorithm.isBlank()) {

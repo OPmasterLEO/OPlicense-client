@@ -1,6 +1,6 @@
 package net.opmasterleo.license.internal.transport;
 
-import net.opmasterleo.license.api.ResponseVerifier;
+import net.opmasterleo.license.api.Ed25519ResponseVerifier;
 import net.opmasterleo.license.internal.json.SimpleJson;
 import net.opmasterleo.license.exception.LicenseException;
 import net.opmasterleo.license.internal.runtime.LicenseRuntime;
@@ -22,7 +22,7 @@ final class LicenseResponseParser {
             String signature,
             String algorithm
     ) {
-        ResponseVerifier verifier = connection.verifier();
+        Ed25519ResponseVerifier verifier = connection.verifier();
         String product = connection.product();
 
         if (!verifier.verify(responseBody, signature, algorithm)) {
@@ -192,11 +192,29 @@ final class LicenseResponseParser {
     }
 
     private static Long parseLongOrNull(String value) {
-        if (value == null) return null;
-        try {
-            return Long.parseLong(value);
-        } catch (NumberFormatException ignored) {
+        if (value == null || value.isEmpty()) {
             return null;
         }
+
+        int index = 0;
+        boolean negative = false;
+        if (value.charAt(0) == '-') {
+            negative = true;
+            index = 1;
+        }
+        if (index >= value.length()) {
+            return null;
+        }
+
+        long result = 0;
+        for (int i = index; i < value.length(); i++) {
+            char digit = value.charAt(i);
+            if (digit < '0' || digit > '9') {
+                return null;
+            }
+            result = (result * 10L) + (digit - '0');
+        }
+
+        return negative ? -result : result;
     }
 }

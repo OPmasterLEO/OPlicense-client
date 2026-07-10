@@ -5,56 +5,59 @@ import net.opmasterleo.license.internal.platform.PlatformSupport;
 import net.opmasterleo.license.internal.runtime.LicenseRuntime;
 import net.opmasterleo.license.model.LicenseOutcome;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.URI;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.net.URLEncoder;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 final class LicenseHttpTransport {
 
-    HttpResponse<String> post(LicenseConnection connection, String requestBody) throws IOException, InterruptedException {
+    private static final int CONNECT_TIMEOUT_MS = 10000;
+    private static final int READ_TIMEOUT_MS = 15000;
+    private static final int OUTCOME_CONNECT_TIMEOUT_MS = 5000;
+    private static final int OUTCOME_READ_TIMEOUT_MS = 5000;
+
+    LicenseHttpResponse post(LicenseConnection connection, String requestBody) throws IOException, InterruptedException {
         String url = connection.apiUrl()
                 + "/v1/license/"
                 + encodePathSegment(connection.product())
                 + "/"
                 + encodePathSegment(connection.licenseKey());
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Content-Type", "application/json")
-                .timeout(Duration.ofSeconds(15))
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                .build();
-
         IOException lastIo = null;
         int maxAttempts = 3;
         long backoffBaseMs = 500;
+        LicenseHttpResponse response = null;
 
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
-                return connection.httpClient().send(request, HttpResponse.BodyHandlers.ofString());
-            } catch (InterruptedException e) {
-                throw e;
+                response = executePost(url, requestBody, CONNECT_TIMEOUT_MS, READ_TIMEOUT_MS);
+                break;
             } catch (IOException e) {
                 lastIo = e;
-                if (attempt >= maxAttempts) {
-                    break;
+                if (attempt < maxAttempts) {
+                    PlatformSupport.sleep(backoffBaseMs * attempt);
                 }
-                PlatformSupport.sleep(backoffBaseMs * attempt);
             }
         }
 
-        throw lastIo != null ? lastIo : new IOException("No response received");
+        if (response == null) {
+            throw lastIo != null ? lastIo : new IOException("No response received");
+        }
+        return response;
     }
 
     void reportClientOutcome(LicenseConnection connection, LicenseRuntime runtime, LicenseOutcome outcome) {
         String outcomeCode = toClientOutcome(outcome);
-        if (outcomeCode == null) return;
+        if (outcomeCode == null) {
+            return;
+        }
 
         Map<String, Object> fields = new LinkedHashMap<>(runtime.toRequestFields());
         fields.put("outcome", outcomeCode);
@@ -67,15 +70,83 @@ final class LicenseHttpTransport {
                 + encodePathSegment(connection.licenseKey())
                 + "/client-outcome";
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Content-Type", "application/json")
-                .timeout(Duration.ofSeconds(5))
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                .build();
+        new OutcomeReportThread(url, requestBody).start();
+    }
 
-        connection.httpClient().sendAsync(request, HttpResponse.BodyHandlers.discarding())
-                .exceptionally(ignored -> null);
+    String buildRequestBody(Map<String, Object> fields, String nonce) {
+        Map<String, Object> payload = new LinkedHashMap<>(fields);
+        payload.put("nonce", nonce);
+        return SimpleJson.object(payload);
+    }
+
+    private static LicenseHttpResponse executePost(String url, String requestBody, int connectTimeoutMs, int readTimeoutMs)
+            throws IOException {
+        HttpURLConnection conn = openJsonPost(url, connectTimeoutMs, readTimeoutMs);
+        writeBody(conn, requestBody);
+
+        int statusCode = conn.getResponseCode();
+        String body = readBody(conn, statusCode);
+        String signature = firstHeader(conn, "x-signature", "X-Signature");
+        String algorithm = firstHeader(conn, "x-signature-alg", "X-Signature-Alg");
+        conn.disconnect();
+        return new LicenseHttpResponse(statusCode, body, signature, algorithm);
+    }
+
+    static void executePostFireAndForget(String url, String requestBody, int connectTimeoutMs, int readTimeoutMs) {
+        HttpURLConnection conn = null;
+        try {
+            conn = openJsonPost(url, connectTimeoutMs, readTimeoutMs);
+            writeBody(conn, requestBody);
+            int statusCode = conn.getResponseCode();
+            readBody(conn, statusCode);
+        } catch (Exception ignored) {
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+    }
+
+    private static HttpURLConnection openJsonPost(String url, int connectTimeoutMs, int readTimeoutMs) throws IOException {
+        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        conn.setRequestProperty("Accept", "application/json");
+        conn.setDoOutput(true);
+        conn.setConnectTimeout(connectTimeoutMs);
+        conn.setReadTimeout(readTimeoutMs);
+        return conn;
+    }
+
+    private static void writeBody(HttpURLConnection conn, String requestBody) throws IOException {
+        OutputStream outputStream = conn.getOutputStream();
+        byte[] bytes = requestBody.getBytes(StandardCharsets.UTF_8);
+        outputStream.write(bytes, 0, bytes.length);
+        outputStream.close();
+    }
+
+    private static String readBody(HttpURLConnection conn, int statusCode) throws IOException {
+        InputStream stream = statusCode >= 400 ? conn.getErrorStream() : conn.getInputStream();
+        if (stream == null) {
+            return "";
+        }
+
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        byte[] chunk = new byte[4096];
+        int read;
+        while ((read = stream.read(chunk)) != -1) {
+            buffer.write(chunk, 0, read);
+        }
+        stream.close();
+        return buffer.toString(StandardCharsets.UTF_8.name());
+    }
+
+    private static String firstHeader(HttpURLConnection conn, String primary, String alternate) {
+        String value = conn.getHeaderField(primary);
+        if (value == null || value.isEmpty()) {
+            value = conn.getHeaderField(alternate);
+        }
+        return value;
     }
 
     private static String toClientOutcome(LicenseOutcome outcome) {
@@ -91,13 +162,15 @@ final class LicenseHttpTransport {
         }
     }
 
-    String buildRequestBody(Map<String, Object> fields, String nonce) {
-        Map<String, Object> payload = new LinkedHashMap<>(fields);
-        payload.put("nonce", nonce);
-        return SimpleJson.object(payload);
-    }
-
     private static String encodePathSegment(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
+    }
+
+    static int outcomeConnectTimeoutMs() {
+        return OUTCOME_CONNECT_TIMEOUT_MS;
+    }
+
+    static int outcomeReadTimeoutMs() {
+        return OUTCOME_READ_TIMEOUT_MS;
     }
 }

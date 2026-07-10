@@ -165,7 +165,7 @@ public final class LicenseResult {
             if (message != null && !message.isBlank()) {
                 return message;
             }
-            return networkError.getClass().getSimpleName();
+            return "Network error";
         }
         if (outcome == LicenseOutcome.NETWORK_ERROR) {
             return defaultNetworkErrorMessage();
