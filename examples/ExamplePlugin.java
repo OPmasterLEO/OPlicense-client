@@ -23,7 +23,7 @@ public class ExamplePlugin extends JavaPlugin {
         client.setProductVersion(getDescription().getVersion())
                 .setServerSoftware(Bukkit.getName(), Bukkit.getVersion());
 
-        client.validate().run(new ExampleValidationCallbacks());
+        client.validate().run(new ExampleValidationCallbacks(this));
     }
 
     private void loadPlugin() {
@@ -35,90 +35,96 @@ public class ExamplePlugin extends JavaPlugin {
         Bukkit.getPluginManager().disablePlugin(this);
     }
 
-    private final class ExampleValidationCallbacks extends ValidationCallbacks {
+    private static final class ExampleValidationCallbacks extends ValidationCallbacks {
+
+        private final ExamplePlugin plugin;
+
+        ExampleValidationCallbacks(ExamplePlugin plugin) {
+            this.plugin = plugin;
+        }
 
         @Override
         public void onValid(LicenseResult result) {
-            getLogger().info(result.summary());
+            plugin.getLogger().info(result.summary());
             if (result.update().updateAvailable()) {
-                getLogger().warning(result.update().message());
+                plugin.getLogger().warning(result.update().message());
             }
-            loadPlugin();
+            plugin.loadPlugin();
         }
 
         @Override
         public void onExpired(LicenseResult result) {
-            disableForFailure(result);
+            plugin.disableForFailure(result);
         }
 
         @Override
         public void onRevoked(LicenseResult result) {
-            disableForFailure(result);
+            plugin.disableForFailure(result);
         }
 
         @Override
         public void onDeactivated(LicenseResult result) {
-            disableForFailure(result);
+            plugin.disableForFailure(result);
         }
 
         @Override
         public void onDeleted(LicenseResult result) {
-            disableForFailure(result);
+            plugin.disableForFailure(result);
         }
 
         @Override
         public void onIpNotWhitelisted(LicenseResult result) {
-            disableForFailure(result);
+            plugin.disableForFailure(result);
         }
 
         @Override
         public void onHwidRequired(LicenseResult result) {
-            disableForFailure(result);
+            plugin.disableForFailure(result);
         }
 
         @Override
         public void onMaxHwidExceeded(LicenseResult result) {
-            disableForFailure(result);
+            plugin.disableForFailure(result);
         }
 
         @Override
         public void onBlacklistedIp(LicenseResult result) {
-            disableForFailure(result);
+            plugin.disableForFailure(result);
         }
 
         @Override
         public void onBlacklistedHwid(LicenseResult result) {
-            disableForFailure(result);
+            plugin.disableForFailure(result);
         }
 
         @Override
         public void onProductMismatch(LicenseResult result) {
-            disableForFailure(result);
+            plugin.disableForFailure(result);
         }
 
         @Override
         public void onProductArchived(LicenseResult result) {
-            disableForFailure(result);
+            plugin.disableForFailure(result);
         }
 
         @Override
         public void onLicenseNotFound(LicenseResult result) {
-            disableForFailure(result);
+            plugin.disableForFailure(result);
         }
 
         @Override
         public void onTimestampDesync(LicenseResult result) {
-            disableForFailure(result);
+            plugin.disableForFailure(result);
         }
 
         @Override
         public void onRateLimited(LicenseResult result) {
-            disableForFailure(result);
+            plugin.disableForFailure(result);
         }
 
         @Override
         public void onSignatureInvalid(LicenseResult result) {
-            disableForFailure(result);
+            plugin.disableForFailure(result);
         }
 
         @Override
@@ -127,8 +133,8 @@ public class ExamplePlugin extends JavaPlugin {
             if (message == null || message.isBlank()) {
                 message = "Could not reach the OPLicense API. The license server may be offline or unreachable.";
             }
-            getLogger().severe("Network error validating license: " + message);
-            Bukkit.getPluginManager().disablePlugin(ExamplePlugin.this);
+            plugin.getLogger().severe("Network error validating license: " + message);
+            Bukkit.getPluginManager().disablePlugin(plugin);
         }
     }
 }

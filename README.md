@@ -102,7 +102,17 @@ LicenseClient client = LicenseClient.withEd25519(
 Validate once at the top of `onEnable` with OPLicense before anything else runs:
 
 ```java
-client.validate().run(new ValidationCallbacks() {
+client.validate().run(new PluginValidationCallbacks(this));
+
+// Static nested class — no lambdas, no invokedynamic
+private static final class PluginValidationCallbacks extends ValidationCallbacks {
+
+    private final JavaPlugin plugin;
+
+    PluginValidationCallbacks(JavaPlugin plugin) {
+        this.plugin = plugin;
+    }
+
     @Override
     public void onValid(LicenseResult result) {
         // load config, register listeners, everything else goes here
@@ -110,14 +120,14 @@ client.validate().run(new ValidationCallbacks() {
 
     @Override
     public void onExpired(LicenseResult result) {
-        Bukkit.getPluginManager().disablePlugin(this);
+        Bukkit.getPluginManager().disablePlugin(plugin);
     }
 
     @Override
     public void onNetworkError(Exception exception) {
-        Bukkit.getPluginManager().disablePlugin(this);
+        Bukkit.getPluginManager().disablePlugin(plugin);
     }
-});
+}
 ```
 
 Subclass `ValidationCallbacks` and override only the outcomes you need.
@@ -174,14 +184,23 @@ Set your plugin version before validate. The backend tracks every reported versi
 ```java
 client.setProductVersion(getDescription().getVersion());
 
-client.validate().run(new ValidationCallbacks() {
+client.validate().run(new UpdateCheckCallbacks(this));
+
+private static final class UpdateCheckCallbacks extends ValidationCallbacks {
+
+    private final JavaPlugin plugin;
+
+    UpdateCheckCallbacks(JavaPlugin plugin) {
+        this.plugin = plugin;
+    }
+
     @Override
     public void onValid(LicenseResult result) {
         if (result.update().updateAvailable()) {
-            getLogger().warning(result.update().message());
+            plugin.getLogger().warning(result.update().message());
         }
     }
-});
+}
 ```
 
 `result.update()` exposes:
