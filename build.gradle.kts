@@ -4,11 +4,12 @@ plugins {
 }
 
 group = (findProperty("group") as String?)?.takeIf { it.isNotBlank() } ?: "net.opmasterleo"
-version = (findProperty("version") as String?)?.takeIf { it.isNotBlank() } ?: "1.2.0"
+version = (findProperty("version") as String?)?.takeIf { it.isNotBlank() } ?: "1.2.1"
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
 }
 
 repositories {
