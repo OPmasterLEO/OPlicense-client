@@ -124,7 +124,6 @@ public final class LicenseResult {
         return expiresAt;
     }
 
-    /** Discord display name when the API resolved it; otherwise falls back to the snowflake ID. */
     public String owner() {
         if (owner != null && !owner.isBlank()) return owner;
         return ownerDiscordId;
@@ -158,7 +157,6 @@ public final class LicenseResult {
         return networkError;
     }
 
-    /** Human-readable network failure text; never null for {@link LicenseOutcome#NETWORK_ERROR}. */
     public String networkErrorMessage() {
         if (networkError != null) {
             String message = networkError.getMessage();
@@ -173,7 +171,6 @@ public final class LicenseResult {
         return "Unknown network error.";
     }
 
-    /** Non-null exception for {@link LicenseOutcome#NETWORK_ERROR} callbacks. */
     public Exception networkErrorCause() {
         if (networkError != null) {
             return networkError;

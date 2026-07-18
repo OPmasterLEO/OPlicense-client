@@ -7,7 +7,6 @@ import net.opmasterleo.license.model.LicenseEnvironment;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Mutable runtime metadata sent with validation requests. */
 public final class LicenseRuntime {
 
     private String hwid;

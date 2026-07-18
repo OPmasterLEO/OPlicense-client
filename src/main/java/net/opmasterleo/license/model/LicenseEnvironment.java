@@ -76,17 +76,14 @@ public final class LicenseEnvironment {
         return container;
     }
 
-    /** Host CPU model name when available (e.g. AMD Ryzen 9 9950X 16-Core Processor). */
     public String cpuModel() {
         return cpuModel;
     }
 
-    /** CPU cores allocated to this JVM process (cgroup-aware on Pterodactyl/Docker). */
     public double cpuCores() {
         return cpuCores;
     }
 
-    /** Logical CPU count visible to the JVM (hardware threads, cgroup-aware). */
     public int threadCount() {
         return threadCount;
     }

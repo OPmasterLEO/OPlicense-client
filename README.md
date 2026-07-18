@@ -13,7 +13,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.opmasterleo:OPlicense-client:1.1.4")
+    implementation("com.github.opmasterleo:OPlicense-client:1.2.0")
 }
 ```
 
@@ -30,7 +30,7 @@ Maven:
 <dependency>
     <groupId>com.github.opmasterleo</groupId>
     <artifactId>OPlicense-client</artifactId>
-    <version>1.1.4</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 

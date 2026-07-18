@@ -1,11 +1,15 @@
 package net.opmasterleo.license.internal.crypto;
 
+import net.opmasterleo.license.internal.platform.Checked;
+
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 
 public final class Ed25519 {
 
@@ -13,28 +17,30 @@ public final class Ed25519 {
     }
 
     public static PublicKey decodePublicKey(String spkiBase64) {
-        try {
+        FutureTask<PublicKey> task = new FutureTask<>(() -> {
             String normalized = normalizePublicKey(spkiBase64);
             byte[] der = Base64.getDecoder().decode(normalized);
             KeyFactory factory = KeyFactory.getInstance("Ed25519");
             return factory.generatePublic(new X509EncodedKeySpec(der));
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid Ed25519 public key", e);
+        });
+        task.run();
+        if (task.state() == Future.State.SUCCESS) {
+            return task.resultNow();
         }
+        Throwable cause = task.exceptionNow();
+        throw new IllegalArgumentException("Invalid Ed25519 public key", cause);
     }
 
     public static boolean verify(String payload, String signatureBase64, PublicKey publicKey) {
         if (payload == null || signatureBase64 == null || publicKey == null) {
             return false;
         }
-        try {
+        return Checked.ofBoolean(() -> {
             Signature signature = Signature.getInstance("Ed25519");
             signature.initVerify(publicKey);
             signature.update(payload.getBytes(StandardCharsets.UTF_8));
-            return signature.verify(Base64.getDecoder().decode(signatureBase64.trim()));
-        } catch (Exception ignored) {
-            return false;
-        }
+            return Boolean.valueOf(signature.verify(Base64.getDecoder().decode(signatureBase64.trim())));
+        }, false);
     }
 
     private static String normalizePublicKey(String value) {

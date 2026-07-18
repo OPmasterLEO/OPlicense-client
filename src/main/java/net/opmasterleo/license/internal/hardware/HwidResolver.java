@@ -2,11 +2,6 @@ package net.opmasterleo.license.internal.hardware;
 
 import net.opmasterleo.license.internal.platform.PlatformSupport;
 
-import java.net.NetworkInterface;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.util.Enumeration;
-
 public final class HwidResolver {
 
     private static final String[] ENV_CANDIDATES = {
@@ -89,42 +84,10 @@ public final class HwidResolver {
     }
 
     private static String primaryMacAddress() {
-        try {
-            Enumeration<NetworkInterface> networks = NetworkInterface.getNetworkInterfaces();
-            while (networks.hasMoreElements()) {
-                NetworkInterface network = networks.nextElement();
-                byte[] hardwareAddress = network.getHardwareAddress();
-                if (hardwareAddress == null) {
-                    continue;
-                }
-
-                StringBuilder builder = new StringBuilder();
-                for (int i = 0; i < hardwareAddress.length; i++) {
-                    builder.append(String.format("%02X", hardwareAddress[i]));
-                    if (i + 1 < hardwareAddress.length) {
-                        builder.append(':');
-                    }
-                }
-                if (builder.length() > 0) {
-                    return builder.toString();
-                }
-            }
-        } catch (Exception ignored) {
-        }
-        return null;
+        return PlatformSupport.firstHardwareMac();
     }
 
     private static String fingerprint(String source, String raw) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest((source + ":" + raw).getBytes(StandardCharsets.UTF_8));
-            StringBuilder out = new StringBuilder("HWID-");
-            for (int i = 0; i < hash.length && i < 12; i++) {
-                out.append(String.format("%02X", hash[i]));
-            }
-            return out.toString();
-        } catch (Exception ignored) {
-            return "HWID-" + Integer.toHexString((source + ":" + raw).hashCode()).toUpperCase();
-        }
+        return "HWID-" + PlatformSupport.sha256HexPrefix(source + ":" + raw, 12);
     }
 }

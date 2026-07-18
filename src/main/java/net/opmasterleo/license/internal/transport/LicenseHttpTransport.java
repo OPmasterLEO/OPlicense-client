@@ -14,6 +14,8 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 
 final class LicenseHttpTransport {
 
@@ -71,22 +73,25 @@ final class LicenseHttpTransport {
     }
 
     static LicenseHttpResponse executeOnce(String url, String requestBody, int connectTimeoutMs, int readTimeoutMs) {
-        HttpURLConnection conn = null;
-        try {
-            conn = openPost(url, connectTimeoutMs, readTimeoutMs);
-            writeBody(conn, requestBody);
-            int statusCode = conn.getResponseCode();
-            String body = readBody(conn, statusCode);
-            String signature = header(conn, "x-signature", "X-Signature");
-            String algorithm = header(conn, "x-signature-alg", "X-Signature-Alg");
-            conn.disconnect();
-            return LicenseHttpResponse.success(statusCode, body, signature, algorithm);
-        } catch (Exception e) {
-            if (conn != null) {
-                conn.disconnect();
-            }
-            return LicenseHttpResponse.networkFailure(e.getMessage());
+        FutureTask<LicenseHttpResponse> task = new FutureTask<>(() -> doExecute(url, requestBody, connectTimeoutMs, readTimeoutMs));
+        task.run();
+        if (task.state() == Future.State.SUCCESS) {
+            return task.resultNow();
         }
+        Throwable error = task.exceptionNow();
+        return LicenseHttpResponse.networkFailure(error.getMessage());
+    }
+
+    private static LicenseHttpResponse doExecute(String url, String requestBody, int connectTimeoutMs, int readTimeoutMs)
+            throws Exception {
+        HttpURLConnection conn = openPost(url, connectTimeoutMs, readTimeoutMs);
+        writeBody(conn, requestBody);
+        int statusCode = conn.getResponseCode();
+        String body = readBody(conn, statusCode);
+        String signature = header(conn, "x-signature", "X-Signature");
+        String algorithm = header(conn, "x-signature-alg", "X-Signature-Alg");
+        conn.disconnect();
+        return LicenseHttpResponse.success(statusCode, body, signature, algorithm);
     }
 
     private static HttpURLConnection openPost(String url, int connectTimeoutMs, int readTimeoutMs) throws Exception {

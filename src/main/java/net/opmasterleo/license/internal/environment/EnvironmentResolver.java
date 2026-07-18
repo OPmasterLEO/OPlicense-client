@@ -1,5 +1,6 @@
 package net.opmasterleo.license.internal.environment;
 
+import net.opmasterleo.license.internal.platform.Checked;
 import net.opmasterleo.license.internal.platform.PlatformSupport;
 
 import java.io.InputStream;
@@ -214,7 +215,7 @@ public final class EnvironmentResolver {
     }
 
     private static String readLinuxCpuModel() {
-        try {
+        return Checked.orNull(() -> {
             Path path = Path.of("/proc/cpuinfo");
             if (!Files.exists(path)) {
                 return null;
@@ -234,9 +235,7 @@ public final class EnvironmentResolver {
                 }
             }
             return null;
-        } catch (Exception ignored) {
-            return null;
-        }
+        });
     }
 
     private static String readWindowsCpuModel() {
@@ -245,9 +244,8 @@ public final class EnvironmentResolver {
             return null;
         }
 
-        Process process = null;
-        try {
-            process = new ProcessBuilder(
+        return Checked.orNull(() -> {
+            Process process = new ProcessBuilder(
                     "powershell",
                     "-NoProfile",
                     "-Command",
@@ -268,16 +266,8 @@ public final class EnvironmentResolver {
             input.close();
             process.destroy();
             String output = new String(bytes, StandardCharsets.UTF_8).trim();
-            if (output.isEmpty()) {
-                return null;
-            }
-            return output;
-        } catch (Exception ignored) {
-            if (process != null) {
-                process.destroy();
-            }
-            return null;
-        }
+            return output.isEmpty() ? null : output;
+        });
     }
 
     private static String[] envValues(String[] keys) {

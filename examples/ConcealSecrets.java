@@ -2,10 +2,6 @@ package net.opmasterleo.license.examples;
 
 import net.opmasterleo.license.internal.crypto.Concealed;
 
-/**
- * Dev helper: run main() to print concealed int[] literals for plugin source.
- * Example: ConcealSecrets.main(new String[]{"http://127.0.0.1:3000", "donutsmpcore", "MCowBQYDK2VwAyEA..."});
- */
 public final class ConcealSecrets {
 
     private ConcealSecrets() {

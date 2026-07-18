@@ -29,8 +29,6 @@ public final class SimpleJson {
         return sb.toString();
     }
 
-    // Regex-based JSON parsing is inherently limited; this pattern is tuned for the
-    // flat, string/boolean/null/number responses produced by this project.
     private static final Pattern FLAT_PATTERN = Pattern.compile(
             "\"(\\w+)\"\\s*:\\s*(\"((?:\\\\.|[^\"\\\\])*)\"|true|false|null|[-0-9.]+)"
     );
