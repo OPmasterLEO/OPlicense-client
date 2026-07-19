@@ -1,5 +1,9 @@
 # OPLicense Client
 
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/112c390e9e794b7bacaa6237ab126458)](https://app.codacy.com/gh/OPmasterLEO/OPlicense-client/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![](https://jitpack.io/v/OPmasterLEO/OPlicense-client.svg)](https://jitpack.io/#OPmasterLEO/OPlicense-client)
+[![](https://jitci.com/gh/OPmasterLEO/OPlicense-client/svg)](https://jitci.com/gh/OPmasterLEO/OPlicense-client)
+
 Java license SDK for validating against a self-hosted
 [OPLicense backend](../oplicense-backend). Zero third-party dependencies —
 `HttpURLConnection` + JDK crypto only.
