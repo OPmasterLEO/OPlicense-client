@@ -3,14 +3,17 @@ package net.opmasterleo.license.api;
 import net.opmasterleo.license.LicenseClient;
 import net.opmasterleo.license.model.LicenseResult;
 
+/** Runs validation and dispatches the matching callback. */
 public final class ValidationRequest {
 
     private final LicenseClient client;
 
+    /** Creates a validation request for the given client. */
     public ValidationRequest(LicenseClient client) {
         this.client = client;
     }
 
+    /** Validates and invokes the matching callback. */
     public void run(ValidationCallbacks callbacks) {
         if (callbacks == null) {
             throw new IllegalArgumentException("callbacks is required");

@@ -2,6 +2,7 @@ package net.opmasterleo.license.model;
 
 import net.opmasterleo.license.exception.LicenseException;
 
+/** Result of a license validation attempt. */
 public final class LicenseResult {
 
     private final LicenseOutcome outcome;
@@ -17,6 +18,7 @@ public final class LicenseResult {
     private final String rawBody;
     private final Exception networkError;
 
+    /** Creates a validation result. */
     public LicenseResult(
             LicenseOutcome outcome,
             String product,
@@ -45,6 +47,7 @@ public final class LicenseResult {
         this.networkError = networkError;
     }
 
+    /** Creates a validation result. */
     public static LicenseResult create(
             LicenseOutcome outcome,
             String product,
@@ -75,22 +78,27 @@ public final class LicenseResult {
         );
     }
 
+    /** Returns the validation outcome. */
     public LicenseOutcome outcome() {
         return outcome;
     }
 
+    /** Returns the product slug. */
     public String product() {
         return product;
     }
 
+    /** Returns the license status. */
     public String status() {
         return status;
     }
 
+    /** Returns the expiry timestamp, or {@code null} for lifetime. */
     public String expiresAt() {
         return expiresAt;
     }
 
+    /** Returns the owner username, falling back to Discord id. */
     public String owner() {
         if (owner != null && !owner.isBlank()) {
             return owner;
@@ -98,34 +106,42 @@ public final class LicenseResult {
         return ownerDiscordId;
     }
 
+    /** Returns the owner Discord id. */
     public String ownerDiscordId() {
         return ownerDiscordId;
     }
 
+    /** Returns the bound server id. */
     public String serverId() {
         return serverId;
     }
 
+    /** Returns a copy of whitelisted IPs. */
     public String[] whitelistedIps() {
         return whitelistedIps.clone();
     }
 
+    /** Returns the environment snapshot. */
     public LicenseEnvironment environment() {
         return environment;
     }
 
+    /** Returns update information. */
     public LicenseUpdate update() {
         return update;
     }
 
+    /** Returns the raw response body. */
     public String rawBody() {
         return rawBody;
     }
 
+    /** Returns the network error, if any. */
     public Exception networkError() {
         return networkError;
     }
 
+    /** Returns a human-readable network error message. */
     public String networkErrorMessage() {
         if (networkError != null) {
             String message = networkError.getMessage();
@@ -140,6 +156,7 @@ public final class LicenseResult {
         return "Unknown network error.";
     }
 
+    /** Returns the network error cause, synthesizing one for network outcomes. */
     public Exception networkErrorCause() {
         if (networkError != null) {
             return networkError;
@@ -154,6 +171,7 @@ public final class LicenseResult {
         return "Could not reach the OPLicense API. The license server may be offline or unreachable.";
     }
 
+    /** Returns a short human-readable summary of this result. */
     public String summary() {
         String statusPart = status == null ? "" : " Status: " + status + ".";
         String expiresPart = formatExpiresAt();

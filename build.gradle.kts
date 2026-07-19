@@ -28,6 +28,12 @@ tasks.withType<JavaCompile>().configureEach {
     options.release.set(17)
 }
 
+tasks.withType<Javadoc>().configureEach {
+    options.encoding = "UTF-8"
+    exclude("**/internal/**")
+    (options as StandardJavadocDocletOptions).addBooleanOption("Xdoclint:all,-missing", true)
+}
+
 tasks.test {
     useJUnitPlatform()
 }

@@ -8,20 +8,24 @@ import net.opmasterleo.license.internal.core.ValidationEngine;
 import net.opmasterleo.license.model.LicenseEnvironment;
 import net.opmasterleo.license.model.LicenseResult;
 
+/** OPLicense validation client. */
 public final class LicenseClient {
 
+    /** SDK version. */
     public static final String VERSION = "2.0.0";
 
     private final ClientConfig config;
     private final RequestContext context;
     private final ValidationEngine engine;
 
+    /** Creates a client with an existing Ed25519 verifier. */
     public LicenseClient(String apiUrl, String licenseKey, String product, Ed25519ResponseVerifier verifier) {
         this.config = ClientConfig.create(apiUrl, licenseKey, product, verifier);
         this.context = new RequestContext();
         this.engine = new ValidationEngine();
     }
 
+    /** Creates a client from an Ed25519 SPKI public key (Base64). */
     public static LicenseClient withEd25519(
             String apiUrl,
             String licenseKey,
@@ -36,64 +40,77 @@ public final class LicenseClient {
         );
     }
 
+    /** Sets an explicit HWID. */
     public LicenseClient setHwid(String hwid) {
         context.setHwid(hwid);
         return this;
     }
 
+    /** Regenerates the automatic HWID. */
     public LicenseClient useAutoHwid() {
         context.useAutoHwid();
         return this;
     }
 
+    /** Sets the MAC address sent with validation. */
     public LicenseClient setMacAddress(String macAddress) {
         context.setMacAddress(macAddress);
         return this;
     }
 
+    /** Sets the plugin/product version. */
     public LicenseClient setProductVersion(String productVersion) {
         context.setProductVersion(productVersion);
         return this;
     }
 
+    /** Sets server software name and version. */
     public LicenseClient setServerSoftware(String serverSoftware, String serverSoftwareVersion) {
         context.setServerSoftware(serverSoftware, serverSoftwareVersion);
         return this;
     }
 
+    /** Sets a container label (for example {@code pterodactyl}). */
     public LicenseClient setContainer(String container) {
         context.setContainer(container);
         return this;
     }
 
+    /** Overrides {@code user.dir}. */
     public LicenseClient setUserDir(String userDir) {
         context.setUserDir(userDir);
         return this;
     }
 
+    /** Overrides {@code user.home}. */
     public LicenseClient setUserHome(String userHome) {
         context.setUserHome(userHome);
         return this;
     }
 
+    /** Overrides the reported username. */
     public LicenseClient setUserName(String userName) {
         context.setUserName(userName);
         return this;
     }
 
+    /** Sets the Pterodactyl node name. */
     public LicenseClient setPterodactylNode(String pterodactylNode) {
         context.setPterodactylNode(pterodactylNode);
         return this;
     }
 
+    /** Returns the captured environment snapshot. */
     public LicenseEnvironment environment() {
         return context.environment();
     }
 
+    /** Starts a validation request. */
     public ValidationRequest validate() {
         return new ValidationRequest(this);
     }
 
+    /** Runs validation synchronously and returns the result. */
     public LicenseResult execute() {
         return engine.validate(config, context);
     }
