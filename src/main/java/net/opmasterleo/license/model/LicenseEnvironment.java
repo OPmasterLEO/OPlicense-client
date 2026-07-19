@@ -1,6 +1,6 @@
 package net.opmasterleo.license.model;
 
-import net.opmasterleo.license.internal.environment.EnvironmentResolver;
+import net.opmasterleo.license.internal.probe.EnvironmentProbe;
 
 public final class LicenseEnvironment {
 
@@ -50,13 +50,13 @@ public final class LicenseEnvironment {
                 userDir,
                 userHome,
                 userName,
-                container != null ? container : EnvironmentResolver.resolveContainerLabel(),
-                EnvironmentResolver.resolveCpuModel(),
-                EnvironmentResolver.resolveCpuCores(),
-                EnvironmentResolver.resolveThreadCount(),
-                pterodactylNode != null ? pterodactylNode : EnvironmentResolver.resolvePterodactylNode(),
-                EnvironmentResolver.resolvePterodactylServerId(),
-                EnvironmentResolver.resolvePterodactylServerUuid()
+                container != null ? container : EnvironmentProbe.resolveContainerLabel(),
+                EnvironmentProbe.resolveCpuModel(),
+                EnvironmentProbe.resolveCpuCores(),
+                EnvironmentProbe.resolveThreadCount(),
+                pterodactylNode != null ? pterodactylNode : EnvironmentProbe.resolvePterodactylNode(),
+                EnvironmentProbe.resolvePterodactylServerId(),
+                EnvironmentProbe.resolvePterodactylServerUuid()
         );
     }
 

@@ -17,39 +17,6 @@ public final class LicenseResult {
     private final String rawBody;
     private final Exception networkError;
 
-    public LicenseResult(LicenseOutcome outcome, String product, String status, String expiresAt, String rawBody, Exception networkError) {
-        this(outcome, product, status, expiresAt, null, null, null, null, null, null, rawBody, networkError);
-    }
-
-    public LicenseResult(
-            LicenseOutcome outcome,
-            String product,
-            String status,
-            String expiresAt,
-            String ownerDiscordId,
-            String serverId,
-            String[] whitelistedIps,
-            String rawBody,
-            Exception networkError
-    ) {
-        this(outcome, product, status, expiresAt, null, ownerDiscordId, serverId, whitelistedIps, null, null, rawBody, networkError);
-    }
-
-    public LicenseResult(
-            LicenseOutcome outcome,
-            String product,
-            String status,
-            String expiresAt,
-            String ownerDiscordId,
-            String serverId,
-            String[] whitelistedIps,
-            LicenseEnvironment environment,
-            String rawBody,
-            Exception networkError
-    ) {
-        this(outcome, product, status, expiresAt, null, ownerDiscordId, serverId, whitelistedIps, environment, null, rawBody, networkError);
-    }
-
     public LicenseResult(
             LicenseOutcome outcome,
             String product,
@@ -73,7 +40,7 @@ public final class LicenseResult {
         this.serverId = serverId;
         this.whitelistedIps = whitelistedIps == null ? new String[0] : whitelistedIps.clone();
         this.environment = environment;
-        this.update = update == null ? LicenseUpdate.of(null, null, false) : update;
+        this.update = update == null ? LicenseUpdate.none(null) : update;
         this.rawBody = rawBody;
         this.networkError = networkError;
     }
@@ -125,7 +92,9 @@ public final class LicenseResult {
     }
 
     public String owner() {
-        if (owner != null && !owner.isBlank()) return owner;
+        if (owner != null && !owner.isBlank()) {
+            return owner;
+        }
         return ownerDiscordId;
     }
 
@@ -202,15 +171,25 @@ public final class LicenseResult {
             case DELETED:
                 return "License deleted." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
             case IP_NOT_WHITELISTED:
-                return "Server IP is not whitelisted for this license." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
+                return "Server IP is not whitelisted for this license."
+                        + (statusPart.isEmpty() ? "" : statusPart)
+                        + expiresPart;
             case HWID_REQUIRED:
-                return "A hardware identifier (HWID) is required to validate this license." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
+                return "A hardware identifier (HWID) is required to validate this license."
+                        + (statusPart.isEmpty() ? "" : statusPart)
+                        + expiresPart;
             case MAX_HWIDS_REACHED:
-                return "This license has reached its maximum number of allowed HWIDs." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
+                return "This license has reached its maximum number of allowed HWIDs."
+                        + (statusPart.isEmpty() ? "" : statusPart)
+                        + expiresPart;
             case BLACKLISTED_IP:
-                return "This server's IP is blacklisted for validation." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
+                return "This server's IP is blacklisted for validation."
+                        + (statusPart.isEmpty() ? "" : statusPart)
+                        + expiresPart;
             case BLACKLISTED_HWID:
-                return "This device's HWID is blacklisted for validation." + (statusPart.isEmpty() ? "" : statusPart) + expiresPart;
+                return "This device's HWID is blacklisted for validation."
+                        + (statusPart.isEmpty() ? "" : statusPart)
+                        + expiresPart;
             case PRODUCT_MISMATCH:
                 return "License is not valid for this product.";
             case PRODUCT_ARCHIVED:
@@ -237,7 +216,9 @@ public final class LicenseResult {
 
     private String formatExpiresAt() {
         if (expiresAt == null || "null".equalsIgnoreCase(expiresAt)) {
-            if (outcome == LicenseOutcome.VALID || "ACTIVE".equals(status)) return " Expires: Lifetime.";
+            if (outcome == LicenseOutcome.VALID || "ACTIVE".equals(status)) {
+                return " Expires: Lifetime.";
+            }
             return "";
         }
         return " Expires: " + expiresAt + ".";

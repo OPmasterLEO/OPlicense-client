@@ -1,13 +1,13 @@
-package net.opmasterleo.license.internal.runtime;
+package net.opmasterleo.license.internal.core;
 
-import net.opmasterleo.license.internal.environment.EnvironmentResolver;
-import net.opmasterleo.license.internal.hardware.HwidResolver;
+import net.opmasterleo.license.internal.probe.EnvironmentProbe;
+import net.opmasterleo.license.internal.probe.HardwareId;
 import net.opmasterleo.license.model.LicenseEnvironment;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public final class LicenseRuntime {
+public final class RequestContext {
 
     private String hwid;
     private String macAddress;
@@ -25,7 +25,7 @@ public final class LicenseRuntime {
     private String pterodactylNode;
     private boolean initialized;
 
-    public LicenseRuntime() {
+    public RequestContext() {
     }
 
     private void ensureInitialized() {
@@ -33,67 +33,57 @@ public final class LicenseRuntime {
             return;
         }
         initialized = true;
-        hwid = HwidResolver.resolveStable();
-        macAddress = HwidResolver.resolvePrimaryMac();
+        hwid = HardwareId.resolveStable();
+        macAddress = HardwareId.resolvePrimaryMac();
         operatingSystem = System.getProperty("os.name");
         operatingSystemVersion = System.getProperty("os.version");
         operatingSystemArchitecture = System.getProperty("os.arch");
         javaVersion = System.getProperty("java.version");
-        userDir = EnvironmentResolver.resolveUserDir();
-        userHome = EnvironmentResolver.resolveUserHome();
-        userName = EnvironmentResolver.resolveUserName();
+        userDir = EnvironmentProbe.resolveUserDir();
+        userHome = EnvironmentProbe.resolveUserHome();
+        userName = EnvironmentProbe.resolveUserName();
     }
 
-    public LicenseRuntime setHwid(String hwid) {
+    public void setHwid(String hwid) {
         this.hwid = hwid;
-        return this;
     }
 
-    public LicenseRuntime useAutoHwid() {
+    public void useAutoHwid() {
         ensureInitialized();
-        this.hwid = HwidResolver.resolveStable();
-        return this;
+        this.hwid = HardwareId.resolveStable();
     }
 
-    public LicenseRuntime setMacAddress(String macAddress) {
+    public void setMacAddress(String macAddress) {
         this.macAddress = macAddress;
-        return this;
     }
 
-    public LicenseRuntime setProductVersion(String productVersion) {
+    public void setProductVersion(String productVersion) {
         this.productVersion = productVersion;
-        return this;
     }
 
-    public LicenseRuntime setServerSoftware(String serverSoftware, String serverSoftwareVersion) {
+    public void setServerSoftware(String serverSoftware, String serverSoftwareVersion) {
         this.serverSoftware = serverSoftware;
         this.serverSoftwareVersion = serverSoftwareVersion;
-        return this;
     }
 
-    public LicenseRuntime setContainer(String container) {
+    public void setContainer(String container) {
         this.container = container;
-        return this;
     }
 
-    public LicenseRuntime setUserDir(String userDir) {
+    public void setUserDir(String userDir) {
         this.userDir = userDir;
-        return this;
     }
 
-    public LicenseRuntime setUserHome(String userHome) {
+    public void setUserHome(String userHome) {
         this.userHome = userHome;
-        return this;
     }
 
-    public LicenseRuntime setUserName(String userName) {
+    public void setUserName(String userName) {
         this.userName = userName;
-        return this;
     }
 
-    public LicenseRuntime setPterodactylNode(String pterodactylNode) {
+    public void setPterodactylNode(String pterodactylNode) {
         this.pterodactylNode = pterodactylNode;
-        return this;
     }
 
     public String productVersion() {
@@ -109,7 +99,7 @@ public final class LicenseRuntime {
         ensureInitialized();
         LicenseEnvironment environment = environment();
         Map<String, Object> fields = new LinkedHashMap<>();
-        fields.put("timestamp", System.currentTimeMillis() / 1000);
+        fields.put("timestamp", System.currentTimeMillis() / 1000L);
         fields.put("hwid", hwid);
         fields.put("macAddress", macAddress);
         fields.put("productVersion", productVersion);

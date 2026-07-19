@@ -14,7 +14,7 @@ public class ExamplePlugin extends JavaPlugin {
         String key = getConfig().getString("license-key");
 
         LicenseClient client = LicenseClient.withEd25519(
-                "http://YOUR-VPS-IP:3000",
+                "https://YOUR-API-HOST",
                 key,
                 "example-product",
                 "YOUR-PRODUCT-ED25519-PUBLIC-KEY-SPKI-BASE64"

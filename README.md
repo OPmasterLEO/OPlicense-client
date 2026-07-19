@@ -1,11 +1,8 @@
 # OPLicense Client
 
-Java client SDK for validating licenses against a self-hosted  
-[OPLicense backend](../oplicense-backend) instance. No external  
-dependencies — uses `HttpURLConnection` and `javax.crypto` from the  
-standard library only, so there's nothing to shade or relocate.
-
-Gradle (`build.gradle.kts`):
+Java license SDK for validating against a self-hosted
+[OPLicense backend](../oplicense-backend). Zero third-party dependencies —
+`HttpURLConnection` + JDK crypto only.
 
 ```kotlin
 repositories {
@@ -13,98 +10,83 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.opmasterleo:OPlicense-client:1.2.1")
+    implementation("com.github.opmasterleo:OPlicense-client:2.0.0")
 }
 ```
 
-Maven:
-
 ```xml
-<repositories>
-    <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
-    </repository>
-</repositories>
-
 <dependency>
     <groupId>com.github.opmasterleo</groupId>
     <artifactId>OPlicense-client</artifactId>
-    <version>1.2.1</version>
+    <version>2.0.0</version>
 </dependency>
 ```
 
+## Design
 
+- **Public API stable** — `LicenseClient.withEd25519(...)`, `validate().run(callbacks)`,
+  `ValidationCallbacks`, `LicenseResult` / `LicenseOutcome` names unchanged from 1.x
+- **Fail closed** — unsigned, replayed, or product-mismatched responses never count as valid
+- **Ed25519 signed responses** — verify every body against your product public key
+- **Anti-replay** — nonce echo + issuedAt clock window (±120s)
+- **Obfuscation-friendly** — no lambdas / `invokedynamic` in the SDK; prefer named nested
+  callback classes in your plugin
 
 ## Package layout
 
 ```
 net.opmasterleo.license/
-  LicenseClient.java              # entry point — the only class most plugins import directly
+  LicenseClient.java
 
 net.opmasterleo.license.api/
-  ValidationRequest.java          # run(ValidationCallbacks) — single dispatch entry
-  ValidationCallbacks.java        # abstract class; override outcomes you care about
-  Ed25519ResponseVerifier.java    # concrete verifier + createEd25519(spkiBase64)
+  ValidationRequest.java
+  ValidationCallbacks.java
+  Ed25519ResponseVerifier.java
 
 net.opmasterleo.license.model/
-  LicenseResult.java              # validation outcome + metadata
-  LicenseOutcome.java             # outcome enum
-  LicenseUpdate.java              # plugin version updater info
-  LicenseEnvironment.java         # captured server environment snapshot
+  LicenseResult.java / LicenseOutcome / LicenseUpdate / LicenseEnvironment
 
 net.opmasterleo.license.exception/
   LicenseException.java
 
 net.opmasterleo.license.internal/
-  transport/                      # HTTP, connection, validator, response parser
-  runtime/                        # mutable request metadata
-  environment/                    # user dir, CPU, Pterodactyl detection
-  hardware/                       # stable HWID resolution
-  crypto/                         # Ed25519 + Concealed string helper
-  json/                           # minimal JSON encode/decode
+  core/       ClientConfig, RequestContext, ValidationEngine
+  http/       LicenseHttp, OutcomeReporter
+  security/   Ed25519, Nonce, ResponseGuard
+  probe/      HardwareId, EnvironmentProbe
+  json/       Json
+  util/       Digests, Io, Numbers, Strings
+  crypto/     Concealed (optional string helper)
 ```
 
-Typical imports:
+## Secrets
+
+Keep **API URL**, **product slug**, and **Ed25519 public key** as constants in plugin
+source. Only the **license key** belongs in `config.yml`.
 
 ```java
-import net.opmasterleo.license.LicenseClient;
-import net.opmasterleo.license.model.LicenseResult;
-import net.opmasterleo.license.model.LicenseEnvironment;
-```
+private static final String API_URL = "https://your-api.example";
+private static final String PRODUCT = "your-product-slug";
+private static final String PUBLIC_KEY = "MCowBQYDK2VwAyEA...";
 
-`ValidationRequest` is returned from `client.validate()` — you usually don't need to import it unless you store it in a variable.
-
-## What must never go in a user-editable config file
-
-The API URL and signing material are **not** meant to be configurable by
-whoever runs the server. Both belong in your plugin's private source (ideally
-concealed — see below). Only the license key itself belongs in `config.yml`.
-
-### Ed25519 (public key only)
-
-Embed the **public key** from `/product info`. Even if someone decompiles your JAR they
-**cannot forge** valid license responses.
-
-```java
 LicenseClient client = LicenseClient.withEd25519(
-    "https://your-api.example",          // use HTTPS in production
+    API_URL,
     getConfig().getString("license-key"),
-    "your-product-slug",
-    "MCowBQYDK2VwAyEA..."                // SPKI base64 from /product info DM
+    PRODUCT,
+    PUBLIC_KEY
 );
 ```
 
-
+Prefer **HTTPS** in production. HTTP is accepted for local / IP endpoints.
 
 ## Basic usage
 
-Validate once at the top of `onEnable` with OPLicense before anything else runs:
-
 ```java
+client.setProductVersion(getDescription().getVersion())
+      .setServerSoftware(Bukkit.getName(), Bukkit.getVersion());
+
 client.validate().run(new PluginValidationCallbacks(this));
 
-// Static nested class — no lambdas, no invokedynamic
 private static final class PluginValidationCallbacks extends ValidationCallbacks {
 
     private final JavaPlugin plugin;
@@ -115,11 +97,16 @@ private static final class PluginValidationCallbacks extends ValidationCallbacks
 
     @Override
     public void onValid(LicenseResult result) {
-        // load config, register listeners, everything else goes here
+        // register listeners / load features here
     }
 
     @Override
     public void onExpired(LicenseResult result) {
+        Bukkit.getPluginManager().disablePlugin(plugin);
+    }
+
+    @Override
+    public void onSignatureInvalid(LicenseResult result) {
         Bukkit.getPluginManager().disablePlugin(plugin);
     }
 
@@ -130,140 +117,43 @@ private static final class PluginValidationCallbacks extends ValidationCallbacks
 }
 ```
 
-Subclass `ValidationCallbacks` and override only the outcomes you need.
-The SDK dispatches with `invokevirtual` on your concrete class — no
-functional interfaces, no fluent chains, no `invokedynamic` in the SDK itself.
+Call once at the top of `onEnable`. There is no offline cache or last-known-good fallback.
 
-Call this once, at the very top of `onEnable`, before anything else runs.
-There's no polling loop — this is a single check per server boot. If the
-backend is unreachable, `onNetworkError` fires and nothing after it
-should ever execute; this SDK does not cache or fall back to a
-last-known-good result.
+## Outcomes
 
-## Full outcome list
+| Callback | When |
+| --- | --- |
+| `onValid` | License accepted |
+| `onExpired` / `onRevoked` / `onDeactivated` / `onDeleted` | License state |
+| `onIpNotWhitelisted` | IP not on whitelist |
+| `onHwidRequired` / `onMaxHwidExceeded` | HWID policy |
+| `onBlacklistedIp` / `onBlacklistedHwid` | Blacklist |
+| `onProductMismatch` / `onProductArchived` / `onLicenseNotFound` | Product / key |
+| `onTimestampDesync` / `onRateLimited` | Request rejected |
+| `onSignatureInvalid` | Signature / replay / nonce failure (local) |
+| `onNetworkError` | Unreachable API / HTTP 5xx |
 
+## Environment & HWID
 
-| Callback                     | Fires when                                                                                        |
-| ---------------------------- | ------------------------------------------------------------------------------------------------- |
-| `onValid(result)`            | License is good                                                                                   |
-| `onExpired(result)`          | Past its expiry date                                                                              |
-| `onRevoked(result)`          | Explicitly revoked by an admin                                                                    |
-| `onIpNotWhitelisted(result)` | This server's IP isn't on the license's whitelist                                                 |
-| `onProductMismatch(result)`  | Key doesn't belong to this product                                                                |
-| `onProductArchived(result)`  | Product has been discontinued                                                                     |
-| `onLicenseNotFound(result)`  | Key doesn't exist                                                                                 |
-| `onTimestampDesync(result)`  | Server clock drift outside the allowed window                                                     |
-| `onRateLimited(result)`      | Too many recent validate attempts for this key/IP                                                 |
-| `onSignatureInvalid(result)` | Response didn't verify against the public key — treat as a possible spoofed server                |
-| `onNetworkError(exception)`  | Couldn't reach the OPLicense API (use `exception.getMessage()` or `result.networkErrorMessage()`) |
-
-
-Any callback you don't set is simply skipped — nothing runs. There's no
-forced console output or banner; build whatever presentation fits your
-plugin's own style using the `LicenseResult` data (`result.status()`,
-`result.expiresAt()`, `result.owner()`, `result.ownerDiscordId()`, `result.serverId()`,
-`result.whitelistedIps()`, `result.rawBody()`).
-
-## Optional environment fields
-
-These are gathered automatically with sensible defaults but can be
-overridden before calling `validate()`:
+Optional overrides before `validate()`:
 
 ```java
 client.setProductVersion(getDescription().getVersion())
       .setServerSoftware(Bukkit.getName(), Bukkit.getVersion())
-      .setContainer("pterodactyl");
+      .setContainer("pterodactyl")
+      .setHwid("your-stable-server-id");
 ```
 
+Default HWID order: explicit override → container env → `/etc/machine-id` → MAC → legacy.
+Values are hashed (`HWID-...`) before leave the client.
 
+`result.update()` exposes plugin version update hints when you set `setProductVersion`.
 
-### Plugin updater message
+## Security notes (2.0)
 
-Set your plugin version before validate. The backend tracks every reported version per product and returns the highest observed version as latest:
-
-```java
-client.setProductVersion(getDescription().getVersion());
-
-client.validate().run(new UpdateCheckCallbacks(this));
-
-private static final class UpdateCheckCallbacks extends ValidationCallbacks {
-
-    private final JavaPlugin plugin;
-
-    UpdateCheckCallbacks(JavaPlugin plugin) {
-        this.plugin = plugin;
-    }
-
-    @Override
-    public void onValid(LicenseResult result) {
-        if (result.update().updateAvailable()) {
-            plugin.getLogger().warning(result.update().message());
-        }
-    }
-}
-```
-
-`result.update()` exposes:
-
-- `currentVersion()` — version you sent
-- `latestVersion()` — highest version seen across licensed servers
-- `updateAvailable()` — `true` when current is behind latest
-- `message()` — ready-to-print updater text
-
-Defaults are also collected automatically:
-
-- `userDir` from JVM `user.dir` (e.g. `C:\...\lifesteal` on Windows, `/home/container` on Pterodactyl)
-- `userHome` from JVM `user.home`
-- `userName` from `USER` / `USERNAME` / JVM `user.name` (`?` on Pterodactyl when unavailable)
-- `cpuModel` from `/proc/cpuinfo` on Linux or WMI on Windows (override with `OPLICENSE_CPU_MODEL`)
-- `cpuCores` from container cgroup CPU limit when available (falls back to JVM processors)
-- `threadCount` as logical CPU count visible to the JVM (`availableProcessors`, cgroup-aware)
-- `pterodactylServerId` / `pterodactylServerUuid` from `P_SERVER_ID` / `P_SERVER_UUID`
-- `pterodactylNode` from `PTERODACTYL_NODE` / `P_NODE_NAME` (set in egg startup if Wings does not inject it)
-
-Read them in your plugin before or after validate:
-
-```java
-LicenseEnvironment env = client.environment();
-// or after validate: result.environment()
-
-String cpu = env.cpuModel();
-double allocatedCores = env.cpuCores();
-int threads = env.threadCount();
-String node = env.pterodactylNode();
-```
-
-Override with env vars (`OPLICENSE_USER_DIR`, `OPLICENSE_USER_HOME`, `OPLICENSE_USER_NAME`) or:
-
-```java
-client.setUserDir("C:\\path\\to\\server")
-      .setUserHome("C:\\Users\\YourName")
-      .setUserName("YourName")
-      .setPterodactylNode("node-01");
-```
-
-For Pterodactyl node name, add to your egg startup env if not present:
-`PTERODACTYL_NODE={{node.name}}` or `OPLICENSE_PTERODACTYL_NODE={{node.name}}`.
-
-They're sent along with every request purely for your own visibility —
-the backend logs them to your Discord log channel — and are never used
-to gate access on their own.
-
-### Stable server ID (HWID) for Pterodactyl/containers
-
-The SDK now derives a more stable default HWID for containerized hosts:
-
-1. explicit overrides (`-Doplicense.hwid=...` or `OPLICENSE_HWID`)
-2. Pterodactyl/container env identifiers (`P_SERVER_UUID`, etc.)
-3. machine-id files (`/etc/machine-id`)
-4. MAC/legacy fallback
-
-All candidates are hashed before use (sent as `HWID-...`), so raw panel IDs
-are not sent directly.
-
-If you want full control, still call:
-
-```java
-client.setHwid("your-stable-server-id");
-```
-
+- Response body capped at 1 MiB
+- Redirects disabled on validate requests
+- Signature required; algorithm must be `ed25519`
+- Nonce compared in constant time
+- SDK `User-Agent`: `OPLicense-Client/2.0.0`
+- Local signature / replay failures reported to `/client-outcome`

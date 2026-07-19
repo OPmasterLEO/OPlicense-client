@@ -1,6 +1,4 @@
-package net.opmasterleo.license.internal.crypto;
-
-import net.opmasterleo.license.internal.platform.Checked;
+package net.opmasterleo.license.internal.security;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
@@ -8,8 +6,6 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 
 public final class Ed25519 {
 
@@ -17,47 +13,51 @@ public final class Ed25519 {
     }
 
     public static PublicKey decodePublicKey(String spkiBase64) {
-        FutureTask<PublicKey> task = new FutureTask<>(() -> {
-            String normalized = normalizePublicKey(spkiBase64);
-            byte[] der = Base64.getDecoder().decode(normalized);
+        try {
+            byte[] der = Base64.getDecoder().decode(normalizePublicKey(spkiBase64));
             KeyFactory factory = KeyFactory.getInstance("Ed25519");
             return factory.generatePublic(new X509EncodedKeySpec(der));
-        });
-        task.run();
-        if (task.state() == Future.State.SUCCESS) {
-            return task.resultNow();
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid Ed25519 public key", e);
         }
-        Throwable cause = task.exceptionNow();
-        throw new IllegalArgumentException("Invalid Ed25519 public key", cause);
     }
 
     public static boolean verify(String payload, String signatureBase64, PublicKey publicKey) {
         if (payload == null || signatureBase64 == null || publicKey == null) {
             return false;
         }
-        return Checked.ofBoolean(() -> {
+        try {
+            byte[] signatureBytes = Base64.getDecoder().decode(signatureBase64.trim());
             Signature signature = Signature.getInstance("Ed25519");
             signature.initVerify(publicKey);
             signature.update(payload.getBytes(StandardCharsets.UTF_8));
-            return Boolean.valueOf(signature.verify(Base64.getDecoder().decode(signatureBase64.trim())));
-        }, false);
+            return signature.verify(signatureBytes);
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     private static String normalizePublicKey(String value) {
         if (value == null) {
             return "";
         }
-
         String normalized = value.trim();
         if (normalized.startsWith("`") && normalized.endsWith("`") && normalized.length() >= 2) {
             normalized = normalized.substring(1, normalized.length() - 1).trim();
         }
+        normalized = normalized.replace("-----BEGIN PUBLIC KEY-----", "");
+        normalized = normalized.replace("-----END PUBLIC KEY-----", "");
+        return stripWhitespace(normalized);
+    }
 
-        normalized = normalized
-                .replace("-----BEGIN PUBLIC KEY-----", "")
-                .replace("-----END PUBLIC KEY-----", "")
-                .replaceAll("\\s+", "");
-
-        return normalized;
+    private static String stripWhitespace(String value) {
+        StringBuilder builder = new StringBuilder(value.length());
+        for (int i = 0; i < value.length(); i++) {
+            char ch = value.charAt(i);
+            if (!Character.isWhitespace(ch)) {
+                builder.append(ch);
+            }
+        }
+        return builder.toString();
     }
 }

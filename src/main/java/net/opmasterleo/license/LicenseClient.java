@@ -2,22 +2,24 @@ package net.opmasterleo.license;
 
 import net.opmasterleo.license.api.Ed25519ResponseVerifier;
 import net.opmasterleo.license.api.ValidationRequest;
-import net.opmasterleo.license.internal.runtime.LicenseRuntime;
-import net.opmasterleo.license.internal.transport.LicenseConnection;
-import net.opmasterleo.license.internal.transport.LicenseValidator;
+import net.opmasterleo.license.internal.core.ClientConfig;
+import net.opmasterleo.license.internal.core.RequestContext;
+import net.opmasterleo.license.internal.core.ValidationEngine;
 import net.opmasterleo.license.model.LicenseEnvironment;
 import net.opmasterleo.license.model.LicenseResult;
 
 public final class LicenseClient {
 
-    private final LicenseConnection connection;
-    private final LicenseRuntime runtime;
-    private final LicenseValidator validator;
+    public static final String VERSION = "2.0.0";
+
+    private final ClientConfig config;
+    private final RequestContext context;
+    private final ValidationEngine engine;
 
     public LicenseClient(String apiUrl, String licenseKey, String product, Ed25519ResponseVerifier verifier) {
-        this.connection = new LicenseConnection(apiUrl, licenseKey, product, verifier);
-        this.runtime = new LicenseRuntime();
-        this.validator = new LicenseValidator();
+        this.config = ClientConfig.create(apiUrl, licenseKey, product, verifier);
+        this.context = new RequestContext();
+        this.engine = new ValidationEngine();
     }
 
     public static LicenseClient withEd25519(
@@ -26,61 +28,66 @@ public final class LicenseClient {
             String product,
             String ed25519PublicKeySpkiBase64
     ) {
-        return new LicenseClient(apiUrl, licenseKey, product, Ed25519ResponseVerifier.createEd25519(ed25519PublicKeySpkiBase64));
+        return new LicenseClient(
+                apiUrl,
+                licenseKey,
+                product,
+                Ed25519ResponseVerifier.createEd25519(ed25519PublicKeySpkiBase64)
+        );
     }
 
     public LicenseClient setHwid(String hwid) {
-        runtime.setHwid(hwid);
+        context.setHwid(hwid);
         return this;
     }
 
     public LicenseClient useAutoHwid() {
-        runtime.useAutoHwid();
+        context.useAutoHwid();
         return this;
     }
 
     public LicenseClient setMacAddress(String macAddress) {
-        runtime.setMacAddress(macAddress);
+        context.setMacAddress(macAddress);
         return this;
     }
 
     public LicenseClient setProductVersion(String productVersion) {
-        runtime.setProductVersion(productVersion);
+        context.setProductVersion(productVersion);
         return this;
     }
 
     public LicenseClient setServerSoftware(String serverSoftware, String serverSoftwareVersion) {
-        runtime.setServerSoftware(serverSoftware, serverSoftwareVersion);
+        context.setServerSoftware(serverSoftware, serverSoftwareVersion);
         return this;
     }
 
     public LicenseClient setContainer(String container) {
-        runtime.setContainer(container);
+        context.setContainer(container);
         return this;
     }
 
     public LicenseClient setUserDir(String userDir) {
-        runtime.setUserDir(userDir);
+        context.setUserDir(userDir);
         return this;
     }
 
     public LicenseClient setUserHome(String userHome) {
-        runtime.setUserHome(userHome);
+        context.setUserHome(userHome);
         return this;
     }
 
     public LicenseClient setUserName(String userName) {
-        runtime.setUserName(userName);
+        context.setUserName(userName);
         return this;
     }
 
     public LicenseClient setPterodactylNode(String pterodactylNode) {
-        runtime.setPterodactylNode(pterodactylNode);
+        context.setPterodactylNode(pterodactylNode);
         return this;
     }
 
     public LicenseEnvironment environment() {
-        return runtime.environment();
+        return context.environment();
     }
 
     public ValidationRequest validate() {
@@ -88,6 +95,6 @@ public final class LicenseClient {
     }
 
     public LicenseResult execute() {
-        return validator.validate(connection, runtime);
+        return engine.validate(config, context);
     }
 }

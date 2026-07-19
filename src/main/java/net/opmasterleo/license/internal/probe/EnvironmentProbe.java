@@ -1,7 +1,7 @@
-package net.opmasterleo.license.internal.environment;
+package net.opmasterleo.license.internal.probe;
 
-import net.opmasterleo.license.internal.platform.Checked;
-import net.opmasterleo.license.internal.platform.PlatformSupport;
+import net.opmasterleo.license.internal.util.Numbers;
+import net.opmasterleo.license.internal.util.Strings;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -10,7 +10,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public final class EnvironmentResolver {
+public final class EnvironmentProbe {
 
     private static final String[] PTERODACTYL_MARKERS = {
             "P_SERVER_UUID",
@@ -27,11 +27,11 @@ public final class EnvironmentResolver {
             "NODE_ID"
     };
 
-    private EnvironmentResolver() {
+    private EnvironmentProbe() {
     }
 
     public static String resolveUserDir() {
-        return firstNonBlank(
+        return Strings.firstNonBlank(
                 System.getenv("OPLICENSE_USER_DIR"),
                 System.getProperty("oplicense.user.dir"),
                 System.getProperty("user.dir")
@@ -39,7 +39,7 @@ public final class EnvironmentResolver {
     }
 
     public static String resolveUserHome() {
-        return firstNonBlank(
+        return Strings.firstNonBlank(
                 System.getenv("OPLICENSE_USER_HOME"),
                 System.getProperty("oplicense.user.home"),
                 System.getProperty("user.home")
@@ -47,7 +47,7 @@ public final class EnvironmentResolver {
     }
 
     public static String resolveUserName() {
-        String value = firstNonBlank(
+        String value = Strings.firstNonBlank(
                 System.getenv("OPLICENSE_USER_NAME"),
                 System.getProperty("oplicense.user.name"),
                 System.getenv("USER"),
@@ -64,43 +64,39 @@ public final class EnvironmentResolver {
         if (isPterodactylLike()) {
             return "pterodactyl";
         }
-        return firstNonBlank(System.getenv("OPLICENSE_CONTAINER"), System.getProperty("oplicense.container"));
+        return Strings.firstNonBlank(System.getenv("OPLICENSE_CONTAINER"), System.getProperty("oplicense.container"));
     }
 
     public static String resolveCpuModel() {
-        String override = firstNonBlank(
+        String override = Strings.firstNonBlank(
                 System.getenv("OPLICENSE_CPU_MODEL"),
                 System.getProperty("oplicense.cpu.model")
         );
         if (override != null) {
             return override;
         }
-
         String linux = readLinuxCpuModel();
         if (linux != null) {
             return linux;
         }
-
         return readWindowsCpuModel();
     }
 
     public static double resolveCpuCores() {
-        String override = firstNonBlank(
+        String override = Strings.firstNonBlank(
                 System.getenv("OPLICENSE_CPU_CORES"),
                 System.getProperty("oplicense.cpu.cores")
         );
         if (override != null) {
-            double parsed = PlatformSupport.parseDouble(override, -1);
-            if (parsed > 0) {
+            double parsed = Numbers.parseDouble(override, -1.0d);
+            if (parsed > 0.0d) {
                 return parsed;
             }
         }
-
         Double cgroupLimit = readCgroupCpuLimit();
-        if (cgroupLimit != null && cgroupLimit > 0) {
-            return cgroupLimit;
+        if (cgroupLimit != null && cgroupLimit.doubleValue() > 0.0d) {
+            return cgroupLimit.doubleValue();
         }
-
         return Runtime.getRuntime().availableProcessors();
     }
 
@@ -109,11 +105,15 @@ public final class EnvironmentResolver {
     }
 
     public static String resolvePterodactylNode() {
-        return firstNonBlank(envValues(PTERODACTYL_NODE_KEYS));
+        String[] values = new String[PTERODACTYL_NODE_KEYS.length];
+        for (int i = 0; i < PTERODACTYL_NODE_KEYS.length; i++) {
+            values[i] = System.getenv(PTERODACTYL_NODE_KEYS[i]);
+        }
+        return Strings.firstNonBlank(values);
     }
 
     public static String resolvePterodactylServerId() {
-        return firstNonBlank(
+        return Strings.firstNonBlank(
                 System.getenv("OPLICENSE_PTERODACTYL_SERVER_ID"),
                 System.getenv("P_SERVER_ID"),
                 System.getenv("PTERODACTYL_SERVER_ID")
@@ -121,7 +121,7 @@ public final class EnvironmentResolver {
     }
 
     public static String resolvePterodactylServerUuid() {
-        return firstNonBlank(
+        return Strings.firstNonBlank(
                 System.getenv("OPLICENSE_PTERODACTYL_SERVER_UUID"),
                 System.getenv("P_SERVER_UUID"),
                 System.getenv("SERVER_UUID"),
@@ -130,8 +130,8 @@ public final class EnvironmentResolver {
     }
 
     public static boolean isPterodactylLike() {
-        for (String key : PTERODACTYL_MARKERS) {
-            String marker = System.getenv(key);
+        for (int i = 0; i < PTERODACTYL_MARKERS.length; i++) {
+            String marker = System.getenv(PTERODACTYL_MARKERS[i]);
             if (marker != null && !marker.trim().isEmpty()) {
                 return true;
             }
@@ -145,77 +145,61 @@ public final class EnvironmentResolver {
         if (v2 != null) {
             return v2;
         }
-
         v2 = readCgroupV2CpuMax("/sys/fs/cgroup/cpu/cpu.max");
         if (v2 != null) {
             return v2;
         }
-
         return readCgroupV1CpuLimit();
     }
 
     private static Double readCgroupV2CpuMax(String path) {
-        String raw = PlatformSupport.readTextFile(path);
+        String raw = readTextFile(path);
         if (raw == null || "max".equalsIgnoreCase(raw)) {
             return null;
         }
-
         String[] parts = raw.split("\\s+");
         if (parts.length != 2) {
             return null;
         }
-
-        Long quotaValue = PlatformSupport.parseLongOrNull(parts[0]);
-        Long periodValue = PlatformSupport.parseLongOrNull(parts[1]);
-        if (quotaValue == null || periodValue == null) {
+        Long quota = Numbers.parseLongOrNull(parts[0]);
+        Long period = Numbers.parseLongOrNull(parts[1]);
+        if (quota == null || period == null || quota.longValue() <= 0L || period.longValue() <= 0L) {
             return null;
         }
-        long quota = quotaValue.longValue();
-        long period = periodValue.longValue();
-        if (quota <= 0 || period <= 0) {
-            return null;
-        }
-        return (double) quota / period;
+        return (double) quota.longValue() / (double) period.longValue();
     }
 
     private static Double readCgroupV1CpuLimit() {
-        String[][] candidates = {
-                {
-                        "/sys/fs/cgroup/cpu/cpu.cfs_quota_us",
-                        "/sys/fs/cgroup/cpu/cpu.cfs_period_us"
-                },
-                {
-                        "/sys/fs/cgroup/cpu,cpuacct/cpu.cfs_quota_us",
-                        "/sys/fs/cgroup/cpu,cpuacct/cpu.cfs_period_us"
-                }
-        };
-
-        for (String[] pair : candidates) {
-            Double value = readCgroupV1Pair(pair[0], pair[1]);
-            if (value != null) {
-                return value;
-            }
+        Double first = readCgroupV1Pair(
+                "/sys/fs/cgroup/cpu/cpu.cfs_quota_us",
+                "/sys/fs/cgroup/cpu/cpu.cfs_period_us"
+        );
+        if (first != null) {
+            return first;
         }
-        return null;
+        return readCgroupV1Pair(
+                "/sys/fs/cgroup/cpu,cpuacct/cpu.cfs_quota_us",
+                "/sys/fs/cgroup/cpu,cpuacct/cpu.cfs_period_us"
+        );
     }
 
     private static Double readCgroupV1Pair(String quotaPath, String periodPath) {
         if (!Files.exists(Path.of(quotaPath)) || !Files.exists(Path.of(periodPath))) {
             return null;
         }
-        Long quotaValue = PlatformSupport.parseLongOrNull(PlatformSupport.readTextFile(quotaPath));
-        if (quotaValue == null || quotaValue.longValue() <= 0) {
+        Long quota = Numbers.parseLongOrNull(readTextFile(quotaPath));
+        if (quota == null || quota.longValue() <= 0L) {
             return null;
         }
-        Long periodValue = PlatformSupport.parseLongOrNull(PlatformSupport.readTextFile(periodPath));
-        if (periodValue == null || periodValue.longValue() <= 0) {
+        Long period = Numbers.parseLongOrNull(readTextFile(periodPath));
+        if (period == null || period.longValue() <= 0L) {
             return null;
         }
-        return (double) quotaValue.longValue() / (double) periodValue.longValue();
+        return (double) quota.longValue() / (double) period.longValue();
     }
 
     private static String readLinuxCpuModel() {
-        return Checked.orNull(() -> {
+        try {
             Path path = Path.of("/proc/cpuinfo");
             if (!Files.exists(path)) {
                 return null;
@@ -235,7 +219,9 @@ public final class EnvironmentResolver {
                 }
             }
             return null;
-        });
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     private static String readWindowsCpuModel() {
@@ -243,9 +229,9 @@ public final class EnvironmentResolver {
         if (!os.toLowerCase().contains("win")) {
             return null;
         }
-
-        return Checked.orNull(() -> {
-            Process process = new ProcessBuilder(
+        Process process = null;
+        try {
+            process = new ProcessBuilder(
                     "powershell",
                     "-NoProfile",
                     "-Command",
@@ -260,30 +246,33 @@ public final class EnvironmentResolver {
                 process.destroy();
                 return null;
             }
-
             InputStream input = process.getInputStream();
             byte[] bytes = input.readAllBytes();
             input.close();
             process.destroy();
             String output = new String(bytes, StandardCharsets.UTF_8).trim();
             return output.isEmpty() ? null : output;
-        });
-    }
-
-    private static String[] envValues(String[] keys) {
-        String[] values = new String[keys.length];
-        for (int i = 0; i < keys.length; i++) {
-            values[i] = System.getenv(keys[i]);
-        }
-        return values;
-    }
-
-    private static String firstNonBlank(String... values) {
-        for (String value : values) {
-            if (value != null && !value.trim().isEmpty()) {
-                return value.trim();
+        } catch (Exception ignored) {
+            if (process != null) {
+                process.destroy();
             }
+            return null;
         }
-        return null;
+    }
+
+    private static String readTextFile(String path) {
+        try {
+            Path file = Path.of(path);
+            if (!Files.exists(file)) {
+                return null;
+            }
+            String content = Files.readString(file, StandardCharsets.UTF_8).trim();
+            if (content.isEmpty()) {
+                return null;
+            }
+            return content;
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 }

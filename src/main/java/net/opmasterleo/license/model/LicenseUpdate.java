@@ -16,6 +16,10 @@ public final class LicenseUpdate {
         return new LicenseUpdate(currentVersion, latestVersion, updateAvailable);
     }
 
+    public static LicenseUpdate none(String currentVersion) {
+        return new LicenseUpdate(currentVersion, null, false);
+    }
+
     public String currentVersion() {
         return currentVersion;
     }
@@ -29,7 +33,9 @@ public final class LicenseUpdate {
     }
 
     public String message() {
-        if (!updateAvailable || latestVersion == null) return null;
+        if (!updateAvailable || latestVersion == null) {
+            return null;
+        }
         if (currentVersion == null || currentVersion.isBlank()) {
             return "A newer plugin version is available: v" + latestVersion + ".";
         }

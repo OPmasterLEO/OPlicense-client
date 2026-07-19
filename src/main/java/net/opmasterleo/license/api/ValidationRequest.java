@@ -1,7 +1,6 @@
 package net.opmasterleo.license.api;
 
 import net.opmasterleo.license.LicenseClient;
-import net.opmasterleo.license.model.LicenseOutcome;
 import net.opmasterleo.license.model.LicenseResult;
 
 public final class ValidationRequest {

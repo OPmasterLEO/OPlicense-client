@@ -4,12 +4,13 @@ plugins {
 }
 
 group = (findProperty("group") as String?)?.takeIf { it.isNotBlank() } ?: "net.opmasterleo"
-version = (findProperty("version") as String?)?.takeIf { it.isNotBlank() } ?: "1.2.1"
+version = (findProperty("version") as String?)?.takeIf { it.isNotBlank() } ?: "2.0.0"
 
 java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+    withSourcesJar()
+    withJavadocJar()
 }
 
 repositories {
@@ -22,8 +23,9 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
-tasks.withType<JavaCompile> {
+tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
+    options.release.set(17)
 }
 
 tasks.test {
