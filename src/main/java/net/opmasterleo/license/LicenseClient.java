@@ -100,6 +100,45 @@ public final class LicenseClient {
         return this;
     }
 
+    /**
+     * Attaches BuiltByBit anti-piracy placeholders for validation logging.
+     * Pass the literal {@code %%__*__%%} tokens so BBB can inject values at download time.
+     */
+    public LicenseClient setBuiltByBit(
+            String userId,
+            String username,
+            String resourceId,
+            String resourceTitle,
+            String version,
+            String versionNumber,
+            String downloadTimestamp,
+            String nonce
+    ) {
+        context.setBuiltByBit(
+                userId,
+                username,
+                resourceId,
+                resourceTitle,
+                version,
+                versionNumber,
+                downloadTimestamp,
+                nonce
+        );
+        return this;
+    }
+
+    /** Attaches BuiltByBit Steam ID placeholders. */
+    public LicenseClient setBuiltByBitSteam(String steam64, String steam32) {
+        context.setBuiltByBitSteam(steam64, steam32);
+        return this;
+    }
+
+    /** Attaches a BuiltByBit download nonce placeholder. */
+    public LicenseClient setBuiltByBitNonce(String nonce) {
+        context.setBuiltByBitNonce(nonce);
+        return this;
+    }
+
     /** Returns the captured environment snapshot. */
     public LicenseEnvironment environment() {
         return context.environment();

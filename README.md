@@ -153,6 +153,29 @@ Values are hashed (`HWID-...`) before leave the client.
 
 `result.update()` exposes plugin version update hints when you set `setProductVersion`.
 
+## BuiltByBit anti-piracy placeholders
+
+If you publish on BuiltByBit, pass the literal placeholders so BBB injects buyer
+values at download time. OPLicense forwards them on validate and shows them in
+the Discord Environment log block:
+
+```java
+client.setBuiltByBit(
+    "%%__USER__%%",
+    "%%__USERNAME__%%",
+    "%%__RESOURCE__%%",
+    "%%__RESOURCE_TITLE__%%",
+    "%%__VERSION__%%",
+    "%%__VERSION_NUMBER__%%",
+    "%%__TIMESTAMP__%%",
+    "%%__NONCE__%%"
+);
+```
+
+Optional Steam IDs: `setBuiltByBitSteam("%%__STEAM64__%%", "%%__STEAM32__%%")`.
+
+Exclude these strings from obfuscation so BBB can still find and replace them.
+
 ## Security notes (2.0)
 
 - Response body capped at 1 MiB

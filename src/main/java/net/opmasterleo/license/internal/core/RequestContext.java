@@ -23,6 +23,17 @@ public final class RequestContext {
     private String userHome;
     private String userName;
     private String pterodactylNode;
+    private boolean bbb;
+    private String bbbUserId;
+    private String bbbUsername;
+    private String bbbResourceId;
+    private String bbbResourceTitle;
+    private String bbbVersion;
+    private String bbbVersionNumber;
+    private String bbbDownloadTimestamp;
+    private String bbbNonce;
+    private String bbbSteam64;
+    private String bbbSteam32;
     private boolean initialized;
 
     public RequestContext() {
@@ -86,6 +97,37 @@ public final class RequestContext {
         this.pterodactylNode = pterodactylNode;
     }
 
+    public void setBuiltByBit(
+            String userId,
+            String username,
+            String resourceId,
+            String resourceTitle,
+            String version,
+            String versionNumber,
+            String downloadTimestamp,
+            String nonce
+    ) {
+        this.bbb = true;
+        this.bbbUserId = userId;
+        this.bbbUsername = username;
+        this.bbbResourceId = resourceId;
+        this.bbbResourceTitle = resourceTitle;
+        this.bbbVersion = version;
+        this.bbbVersionNumber = versionNumber;
+        this.bbbDownloadTimestamp = downloadTimestamp;
+        this.bbbNonce = nonce;
+    }
+
+    public void setBuiltByBitSteam(String steam64, String steam32) {
+        this.bbbSteam64 = steam64;
+        this.bbbSteam32 = steam32;
+    }
+
+    public void setBuiltByBitNonce(String nonce) {
+        this.bbb = true;
+        this.bbbNonce = nonce;
+    }
+
     public String productVersion() {
         return productVersion;
     }
@@ -127,6 +169,25 @@ public final class RequestContext {
         if (environment.pterodactylServerUuid() != null) {
             fields.put("pterodactylServerUuid", environment.pterodactylServerUuid());
         }
+        if (bbb) {
+            fields.put("bbb", true);
+        }
+        putIfPresent(fields, "bbbUserId", bbbUserId);
+        putIfPresent(fields, "bbbUsername", bbbUsername);
+        putIfPresent(fields, "bbbResourceId", bbbResourceId);
+        putIfPresent(fields, "bbbResourceTitle", bbbResourceTitle);
+        putIfPresent(fields, "bbbVersion", bbbVersion);
+        putIfPresent(fields, "bbbVersionNumber", bbbVersionNumber);
+        putIfPresent(fields, "bbbDownloadTimestamp", bbbDownloadTimestamp);
+        putIfPresent(fields, "bbbNonce", bbbNonce);
+        putIfPresent(fields, "bbbSteam64", bbbSteam64);
+        putIfPresent(fields, "bbbSteam32", bbbSteam32);
         return fields;
+    }
+
+    private static void putIfPresent(Map<String, Object> fields, String key, String value) {
+        if (value != null && !value.isBlank()) {
+            fields.put(key, value);
+        }
     }
 }
