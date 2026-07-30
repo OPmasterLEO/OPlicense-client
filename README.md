@@ -155,9 +155,12 @@ Values are hashed (`HWID-...`) before leave the client.
 
 ## BuiltByBit anti-piracy placeholders
 
-If you publish on BuiltByBit, pass the literal placeholders so BBB injects buyer
-values at download time. OPLicense forwards them on validate and shows them in
-the Discord Environment log block:
+Every validate request includes BuiltByBit placeholders by default
+(`%%__USER__%%`, `%%__NONCE__%%`, …). When the plugin JAR is downloaded from BBB,
+those tokens are replaced with real buyer values. If not injected (local/dev build),
+the literal placeholders are sent and shown in the Discord Environment log.
+
+Optional overrides still exist:
 
 ```java
 client.setBuiltByBit(
@@ -172,9 +175,8 @@ client.setBuiltByBit(
 );
 ```
 
-Optional Steam IDs: `setBuiltByBitSteam("%%__STEAM64__%%", "%%__STEAM32__%%")`.
-
-Exclude these strings from obfuscation so BBB can still find and replace them.
+Exclude `%%__*__%%` strings from obfuscation so BBB can still inject them.
+Shade this SDK into your plugin JAR so the defaults live in the uploaded artifact.
 
 ## Security notes (2.0)
 

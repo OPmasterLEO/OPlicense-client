@@ -9,6 +9,18 @@ import java.util.Map;
 
 public final class RequestContext {
 
+    private static final String BBB_BUILTBYBIT = "%%__BUILTBYBIT__%%";
+    private static final String BBB_USER = "%%__USER__%%";
+    private static final String BBB_USERNAME = "%%__USERNAME__%%";
+    private static final String BBB_RESOURCE = "%%__RESOURCE__%%";
+    private static final String BBB_RESOURCE_TITLE = "%%__RESOURCE_TITLE__%%";
+    private static final String BBB_VERSION = "%%__VERSION__%%";
+    private static final String BBB_VERSION_NUMBER = "%%__VERSION_NUMBER__%%";
+    private static final String BBB_TIMESTAMP = "%%__TIMESTAMP__%%";
+    private static final String BBB_NONCE = "%%__NONCE__%%";
+    private static final String BBB_STEAM64 = "%%__STEAM64__%%";
+    private static final String BBB_STEAM32 = "%%__STEAM32__%%";
+
     private String hwid;
     private String macAddress;
     private String productVersion;
@@ -23,17 +35,17 @@ public final class RequestContext {
     private String userHome;
     private String userName;
     private String pterodactylNode;
-    private boolean bbb;
-    private String bbbUserId;
-    private String bbbUsername;
-    private String bbbResourceId;
-    private String bbbResourceTitle;
-    private String bbbVersion;
-    private String bbbVersionNumber;
-    private String bbbDownloadTimestamp;
-    private String bbbNonce;
-    private String bbbSteam64;
-    private String bbbSteam32;
+    private String bbb = BBB_BUILTBYBIT;
+    private String bbbUserId = BBB_USER;
+    private String bbbUsername = BBB_USERNAME;
+    private String bbbResourceId = BBB_RESOURCE;
+    private String bbbResourceTitle = BBB_RESOURCE_TITLE;
+    private String bbbVersion = BBB_VERSION;
+    private String bbbVersionNumber = BBB_VERSION_NUMBER;
+    private String bbbDownloadTimestamp = BBB_TIMESTAMP;
+    private String bbbNonce = BBB_NONCE;
+    private String bbbSteam64 = BBB_STEAM64;
+    private String bbbSteam32 = BBB_STEAM32;
     private boolean initialized;
 
     public RequestContext() {
@@ -107,25 +119,24 @@ public final class RequestContext {
             String downloadTimestamp,
             String nonce
     ) {
-        this.bbb = true;
-        this.bbbUserId = userId;
-        this.bbbUsername = username;
-        this.bbbResourceId = resourceId;
-        this.bbbResourceTitle = resourceTitle;
-        this.bbbVersion = version;
-        this.bbbVersionNumber = versionNumber;
-        this.bbbDownloadTimestamp = downloadTimestamp;
-        this.bbbNonce = nonce;
+        this.bbb = BBB_BUILTBYBIT;
+        this.bbbUserId = orPlaceholder(userId, BBB_USER);
+        this.bbbUsername = orPlaceholder(username, BBB_USERNAME);
+        this.bbbResourceId = orPlaceholder(resourceId, BBB_RESOURCE);
+        this.bbbResourceTitle = orPlaceholder(resourceTitle, BBB_RESOURCE_TITLE);
+        this.bbbVersion = orPlaceholder(version, BBB_VERSION);
+        this.bbbVersionNumber = orPlaceholder(versionNumber, BBB_VERSION_NUMBER);
+        this.bbbDownloadTimestamp = orPlaceholder(downloadTimestamp, BBB_TIMESTAMP);
+        this.bbbNonce = orPlaceholder(nonce, BBB_NONCE);
     }
 
     public void setBuiltByBitSteam(String steam64, String steam32) {
-        this.bbbSteam64 = steam64;
-        this.bbbSteam32 = steam32;
+        this.bbbSteam64 = orPlaceholder(steam64, BBB_STEAM64);
+        this.bbbSteam32 = orPlaceholder(steam32, BBB_STEAM32);
     }
 
     public void setBuiltByBitNonce(String nonce) {
-        this.bbb = true;
-        this.bbbNonce = nonce;
+        this.bbbNonce = orPlaceholder(nonce, BBB_NONCE);
     }
 
     public String productVersion() {
@@ -169,25 +180,24 @@ public final class RequestContext {
         if (environment.pterodactylServerUuid() != null) {
             fields.put("pterodactylServerUuid", environment.pterodactylServerUuid());
         }
-        if (bbb) {
-            fields.put("bbb", true);
-        }
-        putIfPresent(fields, "bbbUserId", bbbUserId);
-        putIfPresent(fields, "bbbUsername", bbbUsername);
-        putIfPresent(fields, "bbbResourceId", bbbResourceId);
-        putIfPresent(fields, "bbbResourceTitle", bbbResourceTitle);
-        putIfPresent(fields, "bbbVersion", bbbVersion);
-        putIfPresent(fields, "bbbVersionNumber", bbbVersionNumber);
-        putIfPresent(fields, "bbbDownloadTimestamp", bbbDownloadTimestamp);
-        putIfPresent(fields, "bbbNonce", bbbNonce);
-        putIfPresent(fields, "bbbSteam64", bbbSteam64);
-        putIfPresent(fields, "bbbSteam32", bbbSteam32);
+        fields.put("bbb", bbb);
+        fields.put("bbbUserId", bbbUserId);
+        fields.put("bbbUsername", bbbUsername);
+        fields.put("bbbResourceId", bbbResourceId);
+        fields.put("bbbResourceTitle", bbbResourceTitle);
+        fields.put("bbbVersion", bbbVersion);
+        fields.put("bbbVersionNumber", bbbVersionNumber);
+        fields.put("bbbDownloadTimestamp", bbbDownloadTimestamp);
+        fields.put("bbbNonce", bbbNonce);
+        fields.put("bbbSteam64", bbbSteam64);
+        fields.put("bbbSteam32", bbbSteam32);
         return fields;
     }
 
-    private static void putIfPresent(Map<String, Object> fields, String key, String value) {
-        if (value != null && !value.isBlank()) {
-            fields.put(key, value);
+    private static String orPlaceholder(String value, String placeholder) {
+        if (value == null || value.isBlank()) {
+            return placeholder;
         }
+        return value;
     }
 }
