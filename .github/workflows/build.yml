@@ -40,7 +40,6 @@ jobs:
     needs: build
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    environment: REPO
     permissions:
       contents: read
 
@@ -59,9 +58,5 @@ jobs:
           REPOSILITE_USER: ${{ secrets.REPOSILITE_USER }}
           REPOSILITE_TOKEN: ${{ secrets.REPOSILITE_TOKEN }}
         run: |
-          if [ -z "${REPOSILITE_USER}" ] || [ -z "${REPOSILITE_TOKEN}" ]; then
-            echo "Missing REPOSILITE_USER / REPOSILITE_TOKEN in environment REPO."
-            exit 1
-          fi
           chmod +x gradlew
           ./gradlew publish -Preposilite.target=snapshots --no-daemon
