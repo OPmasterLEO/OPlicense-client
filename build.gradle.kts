@@ -4,7 +4,23 @@ plugins {
 }
 
 group = (findProperty("group") as String?)?.takeIf { it.isNotBlank() } ?: "net.opmasterleo"
-version = (findProperty("version") as String?)?.takeIf { it.isNotBlank() } ?: "2.0.0"
+
+val baseVersion = (findProperty("version") as String?)
+    ?.takeIf { it.isNotBlank() && it != Project.DEFAULT_VERSION }
+    ?: "2.0.0"
+
+val reposiliteTarget = (findProperty("reposilite.target") as String?)
+    ?.trim()
+    ?.lowercase()
+    ?: "releases"
+
+val publishSnapshots = reposiliteTarget == "snapshots"
+
+version = when {
+    publishSnapshots && !baseVersion.endsWith("-SNAPSHOT") -> "$baseVersion-SNAPSHOT"
+    !publishSnapshots && baseVersion.endsWith("-SNAPSHOT") -> baseVersion.removeSuffix("-SNAPSHOT")
+    else -> baseVersion
+}
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -45,6 +61,47 @@ publishing {
             artifactId = rootProject.name
             version = project.version.toString()
             from(components["java"])
+            pom {
+                name.set("OPLicense Client")
+                description.set("Java license SDK for validating against a self-hosted OPLicense backend.")
+                url.set("https://github.com/OPmasterLEO/OPlicense-client")
+                developers {
+                    developer {
+                        id.set("opmasterleo")
+                        name.set("OPmasterLEO")
+                    }
+                }
+            }
         }
+    }
+    repositories {
+        maven {
+            name = "Reposilite"
+            url = uri(
+                if (publishSnapshots) {
+                    "https://repo.mastersmp.net/snapshots"
+                } else {
+                    "https://repo.mastersmp.net/releases"
+                }
+            )
+            credentials {
+                username = project.findProperty("reposilite.user") as String?
+                    ?: System.getenv("REPOSILITE_USER")
+                password = project.findProperty("reposilite.token") as String?
+                    ?: System.getenv("REPOSILITE_TOKEN")
+            }
+        }
+    }
+}
+
+tasks.register("printVersion") {
+    doLast {
+        println(version)
+    }
+}
+
+tasks.register("printReposiliteTarget") {
+    doLast {
+        println(if (publishSnapshots) "snapshots" else "releases")
     }
 }

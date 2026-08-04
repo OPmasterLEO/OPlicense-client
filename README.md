@@ -1,26 +1,43 @@
 # OPLicense Client
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/112c390e9e794b7bacaa6237ab126458)](https://app.codacy.com/gh/OPmasterLEO/OPlicense-client/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
-[![](https://jitpack.io/v/OPmasterLEO/OPlicense-client.svg)](https://jitpack.io/#OPmasterLEO/OPlicense-client)
-[![](https://jitci.com/gh/OPmasterLEO/OPlicense-client/svg)](https://jitci.com/gh/OPmasterLEO/OPlicense-client)
 
 Java license SDK for validating against a self-hosted
 [OPLicense backend](../oplicense-backend). Zero third-party dependencies —
 `HttpURLConnection` + JDK crypto only.
 
+Gradle (`build.gradle.kts`):
+
 ```kotlin
 repositories {
-    maven("https://jitpack.io")
+    maven("https://repo.mastersmp.net/releases")
+    // Optional: snapshots from CI commits
+    maven("https://repo.mastersmp.net/snapshots")
 }
 
 dependencies {
-    implementation("com.github.opmasterleo:OPlicense-client:2.0.0")
+    implementation("net.opmasterleo:OPlicense-client:2.0.0")
+    // or snapshot: "net.opmasterleo:OPlicense-client:2.0.0-SNAPSHOT"
 }
 ```
 
+Publishing:
+
+- **Commits / CI** → `https://repo.mastersmp.net/snapshots` (`./gradlew publish -Preposilite.target=snapshots`)
+- **Manual release** → `https://repo.mastersmp.net/releases` (`./gradlew publish`)
+
+Maven:
+
 ```xml
+<repositories>
+    <repository>
+        <id>mastersmp</id>
+        <url>https://repo.mastersmp.net/releases</url>
+    </repository>
+</repositories>
+
 <dependency>
-    <groupId>com.github.opmasterleo</groupId>
+    <groupId>net.opmasterleo</groupId>
     <artifactId>OPlicense-client</artifactId>
     <version>2.0.0</version>
 </dependency>
