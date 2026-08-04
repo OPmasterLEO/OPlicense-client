@@ -15,6 +15,7 @@ jobs:
   publish:
     name: Publish to releases
     runs-on: ubuntu-latest
+    environment: REPO
 
     steps:
       - name: Checkout
