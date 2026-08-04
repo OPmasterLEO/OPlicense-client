@@ -84,13 +84,34 @@ publishing {
                     "https://repo.mastersmp.net/releases"
                 }
             )
-            credentials {
+            credentials(PasswordCredentials::class) {
                 username = project.findProperty("reposilite.user") as String?
                     ?: System.getenv("REPOSILITE_USER")
+                    ?: ""
                 password = project.findProperty("reposilite.token") as String?
                     ?: System.getenv("REPOSILITE_TOKEN")
+                    ?: ""
+            }
+            authentication {
+                create<BasicAuthentication>("basic")
             }
         }
+    }
+}
+
+tasks.withType<PublishToMavenRepository>().configureEach {
+    doFirst {
+        val user = project.findProperty("reposilite.user") as String?
+            ?: System.getenv("REPOSILITE_USER")
+        val token = project.findProperty("reposilite.token") as String?
+            ?: System.getenv("REPOSILITE_TOKEN")
+        require(!user.isNullOrBlank()) { "Missing reposilite.user / REPOSILITE_USER (token name)" }
+        require(!token.isNullOrBlank()) { "Missing reposilite.token / REPOSILITE_TOKEN (token secret)" }
+        logger.lifecycle(
+            "Publishing ${project.group}:${rootProject.name}:${project.version} " +
+                "as user='$user' (secret length=${token.length}) " +
+                "to ${if (publishSnapshots) "snapshots" else "releases"}"
+        )
     }
 }
 
